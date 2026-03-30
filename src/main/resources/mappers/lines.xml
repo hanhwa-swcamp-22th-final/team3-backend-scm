@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ohgiraffers.team3backendscm.scm.query.mapper.LineMapper">
+
+    <!-- ===== findLinesSummary ===== -->
+    <resultMap id="LineSummaryMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.LineSummaryDto">
+        <result property="factoryLineId"   column="factory_line_id"/>
+        <result property="factoryLineName" column="factory_line_name"/>
+        <result property="totalOrderCount" column="total_order_count"/>
+        <result property="completedCount"  column="completed_count"/>
+        <result property="achievementRate" column="achievement_rate"/>
+    </resultMap>
+
+    <select id="findLinesSummary" resultMap="LineSummaryMap">
+        SELECT
+            fl.factory_line_id,
+            fl.factory_line_name,
+            COUNT(DISTINCT o.order_id) AS total_order_count,
+            SUM(CASE WHEN o.order_status = 'COMPLETED' THEN 1 ELSE 0 END) AS completed_count,
+            ROUND(
+                SUM(CASE WHEN o.order_status = 'COMPLETED' THEN 1 ELSE 0 END) * 100.0
+                / NULLIF(COUNT(DISTINCT o.order_id), 0),
+                1
+            ) AS achievement_rate
+        FROM factory_line fl
+        LEFT JOIN equipment_process ep ON fl.factory_line_id = ep.factory_line_id
+        LEFT JOIN equipment eq ON ep.equipment_process_id = eq.equipment_process_id
+        LEFT JOIN worker_deployment wd ON eq.equipment_id = wd.equipment_id
+        LEFT JOIN matching_record mr ON wd.employee_id = mr.employee_id
+            AND mr.assigned_date BETWEEN wd.start_date AND COALESCE(wd.end_date, CURDATE())
+        LEFT JOIN orders o ON mr.order_id = o.order_id
+        GROUP BY fl.factory_line_id, fl.factory_line_name
+    </select>
+
+    <!-- ===== findLineStatus ===== -->
+    <resultMap id="LineStatusMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.LineStatusDto">
+        <result property="factoryLineId"           column="factory_line_id"/>
+        <result property="factoryLineName"         column="factory_line_name"/>
+        <result property="assignedTechnicianCount" column="assigned_technician_count"/>
+        <result property="inProgressOrderCount"    column="in_progress_order_count"/>
+        <result property="totalEquipmentCount"     column="total_equipment_count"/>
+        <result property="operatingEquipmentCount" column="operating_equipment_count"/>
+        <result property="operationRate"           column="operation_rate"/>
+    </resultMap>
+
+    <select id="findLineStatus" resultMap="LineStatusMap">
+        SELECT
+            fl.factory_line_id,
+            fl.factory_line_name,
+            COUNT(DISTINCT wd.employee_id) AS assigned_technician_count,
+            COUNT(DISTINCT CASE WHEN o.order_status = 'INPROGRESS' THEN o.order_id END) AS in_progress_order_count,
+            COUNT(DISTINCT eq.equipment_id) AS total_equipment_count,
+            COUNT(DISTINCT CASE WHEN eq.equipment_status = 'OPERATING' THEN eq.equipment_id END) AS operating_equipment_count,
+            ROUND(
+                COUNT(DISTINCT CASE WHEN eq.equipment_status = 'OPERATING' THEN eq.equipment_id END) * 100.0
+                / NULLIF(COUNT(DISTINCT eq.equipment_id), 0),
+                1
+            ) AS operation_rate
+        FROM factory_line fl
+        LEFT JOIN equipment_process ep ON fl.factory_line_id = ep.factory_line_id
+        LEFT JOIN equipment eq ON ep.equipment_process_id = eq.equipment_process_id
+        LEFT JOIN worker_deployment wd ON eq.equipment_id = wd.equipment_id
+            AND (wd.end_date IS NULL OR wd.end_date >= CURDATE())
+        LEFT JOIN matching_record mr ON wd.employee_id = mr.employee_id
+            AND mr.assigned_date = CURDATE()
+        LEFT JOIN orders o ON mr.order_id = o.order_id
+        WHERE fl.factory_line_id = #{lineId}
+        GROUP BY fl.factory_line_id, fl.factory_line_name
+    </select>
+
+</mapper>
