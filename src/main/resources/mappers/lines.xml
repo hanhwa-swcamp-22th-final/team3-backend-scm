@@ -28,7 +28,7 @@
         LEFT JOIN equipment eq ON ep.equipment_process_id = eq.equipment_process_id
         LEFT JOIN worker_deployment wd ON eq.equipment_id = wd.equipment_id
         LEFT JOIN matching_record mr ON wd.employee_id = mr.employee_id
-            AND mr.assigned_date BETWEEN wd.start_date AND COALESCE(wd.end_date, CURDATE())
+            AND DATE(mr.created_at) BETWEEN wd.start_date AND COALESCE(wd.end_date, CURDATE())
         LEFT JOIN orders o ON mr.order_id = o.order_id
         GROUP BY fl.factory_line_id, fl.factory_line_name
     </select>
@@ -63,7 +63,7 @@
         LEFT JOIN worker_deployment wd ON eq.equipment_id = wd.equipment_id
             AND (wd.end_date IS NULL OR wd.end_date >= CURDATE())
         LEFT JOIN matching_record mr ON wd.employee_id = mr.employee_id
-            AND mr.assigned_date = CURDATE()
+            AND DATE(mr.created_at) = CURDATE()
         LEFT JOIN orders o ON mr.order_id = o.order_id
         WHERE fl.factory_line_id = #{lineId}
         GROUP BY fl.factory_line_id, fl.factory_line_name

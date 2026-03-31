@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ohgiraffers.team3backendscm.scm.query.mapper.TechnicianMapper">
+
+    <!-- ===== findTechnicians ===== -->
+    <resultMap id="TechnicianDtoMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.TechnicianDto">
+        <result property="employeeId"   column="employee_id"/>
+        <result property="employeeName" column="employee_name"/>
+        <result property="tier"         column="employee_tier"/>
+        <result property="ocsaScore"    column="total_points"/>
+        <result property="suitability"  column="capability_index"/>
+    </resultMap>
+
+    <select id="findTechnicians" resultMap="TechnicianDtoMap">
+        SELECT
+            e.employee_id,
+            e.employee_name,
+            e.employee_tier,
+            s.total_points,
+            s.capability_index
+        FROM employee e
+        LEFT JOIN score s ON e.employee_id = s.employee_id
+        WHERE e.employee_role = 'WORKER'
+          AND e.employee_status = 'ACTIVE'
+        ORDER BY s.total_points DESC
+    </select>
+
+</mapper>

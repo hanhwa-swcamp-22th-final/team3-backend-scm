@@ -13,6 +13,7 @@ import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.Order;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.OrderStatus;
 import com.ohgiraffers.team3backendscm.scm.command.domain.repository.MatchingRecordRepository;
 import com.ohgiraffers.team3backendscm.scm.command.domain.repository.OrderRepository;
+import com.ohgiraffers.team3backendscm.scm.query.mapper.EmployeeMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -21,7 +22,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.LocalDate;
 import java.util.NoSuchElementException;
@@ -31,8 +31,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -49,7 +47,7 @@ class AssignmentCommandServiceTest {
     @Mock
     private IdGenerator mockIdGenerator;
     @Mock
-    private JdbcTemplate jdbcTemplate;
+    private EmployeeMapper employeeMapper;
 
     @InjectMocks
     private AssignmentCommandService assignmentCommandService;
@@ -64,8 +62,7 @@ class AssignmentCommandServiceTest {
             // given
             Order order = new Order(idGenerator.generate(), "ORD-0301", OrderStatus.ANALYZED, LocalDate.now().plusDays(5));
             given(orderRepository.findById(1L)).willReturn(Optional.of(order));
-            given(jdbcTemplate.queryForObject(anyString(), eq(String.class), eq(10L)))
-                    .willReturn("A");
+            given(employeeMapper.findTierById(10L)).willReturn("A");
             given(mockIdGenerator.generate()).willReturn(idGenerator.generate());
 
             // when
@@ -81,8 +78,7 @@ class AssignmentCommandServiceTest {
             // given
             Order order = new Order(idGenerator.generate(), "ORD-D5", OrderStatus.ANALYZED, LocalDate.now().plusDays(5), DifficultyGrade.D5);
             given(orderRepository.findById(1L)).willReturn(Optional.of(order));
-            given(jdbcTemplate.queryForObject(anyString(), eq(String.class), eq(10L)))
-                    .willReturn("A"); // A(2) < S(3) → GROWTH_TYPE
+            given(employeeMapper.findTierById(10L)).willReturn("A"); // A(2) < S(3) → GROWTH_TYPE
             given(mockIdGenerator.generate()).willReturn(idGenerator.generate());
 
             // when
@@ -100,8 +96,7 @@ class AssignmentCommandServiceTest {
             // given
             Order order = new Order(idGenerator.generate(), "ORD-D5", OrderStatus.ANALYZED, LocalDate.now().plusDays(5), DifficultyGrade.D5);
             given(orderRepository.findById(1L)).willReturn(Optional.of(order));
-            given(jdbcTemplate.queryForObject(anyString(), eq(String.class), eq(10L)))
-                    .willReturn("S"); // S(3) >= S(3) → EFFICIENCY_TYPE
+            given(employeeMapper.findTierById(10L)).willReturn("S"); // S(3) >= S(3) → EFFICIENCY_TYPE
             given(mockIdGenerator.generate()).willReturn(idGenerator.generate());
 
             // when
@@ -119,8 +114,7 @@ class AssignmentCommandServiceTest {
             // given
             Order order = new Order(idGenerator.generate(), "ORD-0301", OrderStatus.REGISTERED, LocalDate.now().plusDays(5));
             given(orderRepository.findById(1L)).willReturn(Optional.of(order));
-            given(jdbcTemplate.queryForObject(anyString(), eq(String.class), eq(10L)))
-                    .willReturn("A");
+            given(employeeMapper.findTierById(10L)).willReturn("A");
 
             // when & then
             assertThrows(IllegalStateException.class,
@@ -154,7 +148,7 @@ class AssignmentCommandServiceTest {
 
             given(matchingRecordRepository.findById(recordId)).willReturn(Optional.of(record));
             given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
-            given(jdbcTemplate.queryForObject(anyString(), eq(String.class), eq(20L))).willReturn("S");
+            given(employeeMapper.findTierById(20L)).willReturn("S");
 
             // when
             assignmentCommandService.reassign(recordId, new ReassignRequest(20L));
@@ -177,7 +171,7 @@ class AssignmentCommandServiceTest {
 
             given(matchingRecordRepository.findById(recordId)).willReturn(Optional.of(record));
             given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
-            given(jdbcTemplate.queryForObject(anyString(), eq(String.class), eq(20L))).willReturn("B"); // B(1) < S(3)
+            given(employeeMapper.findTierById(20L)).willReturn("B"); // B(1) < S(3)
 
             // when
             assignmentCommandService.reassign(recordId, new ReassignRequest(20L));

@@ -8,8 +8,8 @@ import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingReco
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.Order;
 import com.ohgiraffers.team3backendscm.scm.command.domain.repository.MatchingRecordRepository;
 import com.ohgiraffers.team3backendscm.scm.command.domain.repository.OrderRepository;
+import com.ohgiraffers.team3backendscm.scm.query.mapper.EmployeeMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +22,7 @@ import java.util.NoSuchElementException;
  * <ol>
  *   <li>대상 주문 조회 및 ANALYZED 상태 검증</li>
  *   <li>당일 중복 배정 여부 확인</li>
- *   <li>기술자 역량 티어 조회 (HR DB → JdbcTemplate)</li>
+ *   <li>기술자 역량 티어 조회 (HR DB → EmployeeMapper)</li>
  *   <li>주문 난이도 vs 기술자 역량 비교로 MatchingMode 자동 결정</li>
  *   <li>주문 상태를 INPROGRESS 로 전이 및 저장</li>
  *   <li>배정 확정 기록(MatchingRecord) 생성 및 저장</li>
@@ -36,7 +36,7 @@ public class AssignmentCommandService {
     private final OrderRepository orderRepository;
     private final MatchingRecordRepository matchingRecordRepository;
     private final IdGenerator idGenerator;
-    private final JdbcTemplate jdbcTemplate; // HR 도메인 employee 테이블 조회용
+    private final EmployeeMapper employeeMapper; // HR 도메인 employee 테이블 조회용
 
     /**
      * 기술자를 주문에 배정한다. 트랜잭션 내에서 주문 상태 변경과 배정 기록 저장이 원자적으로 처리된다.
@@ -50,11 +50,8 @@ public class AssignmentCommandService {
         Order order = orderRepository.findById(request.getOrderId())
                 .orElseThrow(() -> new NoSuchElementException("주문을 찾을 수 없습니다. id=" + request.getOrderId()));
 
-        // 기술자 역량 티어 조회 (employee는 HR 소관 → JdbcTemplate)
-        String employeeTier = jdbcTemplate.queryForObject(
-                "SELECT employee_tier FROM employee WHERE employee_id = ?",
-                String.class,
-                request.getTechnicianId());
+        // 기술자 역량 티어 조회 (employee는 HR 소관 → EmployeeMapper)
+        String employeeTier = employeeMapper.findTierById(request.getTechnicianId());
 
         // 난이도 vs 역량 비교로 matching_mode 자동 결정
         MatchingMode matchingMode = MatchingMode.determine(order.getDifficultyGrade(), employeeTier);
@@ -85,9 +82,7 @@ public class AssignmentCommandService {
         Order order = orderRepository.findById(record.getOrderId())
                 .orElseThrow(() -> new NoSuchElementException("주문을 찾을 수 없습니다. id=" + record.getOrderId()));
 
-        String employeeTier = jdbcTemplate.queryForObject(
-                "SELECT employee_tier FROM employee WHERE employee_id = ?",
-                String.class, request.getTechnicianId());
+        String employeeTier = employeeMapper.findTierById(request.getTechnicianId());
 
         MatchingMode newMatchingMode = MatchingMode.determine(order.getDifficultyGrade(), employeeTier);
         record.reassign(request.getTechnicianId(), newMatchingMode);
