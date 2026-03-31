@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ohgiraffers.team3backendscm.scm.query.mapper.WorkerMapper">
+
+    <!-- ===== findMyPendingTasks ===== -->
+    <!-- 작업자의 미완료 작업 목록 조회. matching_record·orders·product 테이블을 JOIN하여 구성한다. -->
+    <resultMap id="TaskDtoMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.TaskDto">
+        <result property="taskId"          column="matching_record_id"/>
+        <result property="orderId"         column="order_id"/>
+        <result property="orderNo"         column="order_no"/>
+        <result property="productName"     column="product_name"/>
+        <result property="difficultyGrade" column="difficulty_grade"/>
+        <result property="dueDate"         column="order_deadline"/>
+        <result property="matchingMode"    column="matching_mode"/>
+        <result property="matchingStatus"  column="matching_status"/>
+        <result property="workStartAt"     column="work_start_at"/>
+        <result property="workEndAt"       column="work_end_at"/>
+        <result property="comment"         column="comment"/>
+    </resultMap>
+
+    <select id="findMyPendingTasks" parameterType="long" resultMap="TaskDtoMap">
+        SELECT
+            mr.matching_record_id,
+            mr.order_id,
+            o.order_no,
+            p.product_name,
+            o.difficulty_grade,
+            o.order_deadline,
+            mr.matching_mode,
+            mr.matching_status,
+            mr.work_start_at,
+            mr.work_end_at,
+            mr.comment
+        FROM matching_record mr
+        JOIN orders o ON mr.order_id = o.order_id
+        JOIN product p ON o.product_id = p.product_id
+        WHERE mr.employee_id = #{employeeId}
+          AND mr.matching_status NOT IN ('REJECT', 'COMPLETE')
+        ORDER BY o.order_deadline ASC
+    </select>
+
+    <!-- ===== findMyDeployments ===== -->
+    <!-- 작업자의 설비 배치 이력 조회. worker_deployment·equipment 테이블을 JOIN한다. -->
+    <resultMap id="DeploymentMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.WorkerDeploymentDto">
+        <result property="facilityId"     column="equipment_id"/>
+        <result property="facilityName"   column="equipment_name"/>
+        <result property="deploymentDate" column="start_date"/>
+        <result property="role"           column="role"/>
+    </resultMap>
+
+    <select id="findMyDeployments" parameterType="long" resultMap="DeploymentMap">
+        SELECT
+            eq.equipment_id,
+            eq.equipment_name,
+            wd.start_date,
+            wd.role
+        FROM worker_deployment wd
+        JOIN equipment eq ON wd.equipment_id = eq.equipment_id
+        WHERE wd.employee_id = #{employeeId}
+        ORDER BY wd.start_date DESC
+    </select>
+
+    <!-- ===== findMyMatchingHistory ===== -->
+    <!-- 작업자의 주문 배정 이력 조회. matching_record·orders 테이블을 JOIN한다. -->
+    <resultMap id="MatchingHistoryMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.WorkerMatchingHistoryDto">
+        <result property="matchingRecordId" column="matching_record_id"/>
+        <result property="orderId"          column="order_id"/>
+        <result property="orderNumber"      column="order_no"/>
+        <result property="assignedDate"     column="assigned_date"/>
+        <result property="status"           column="matching_status"/>
+    </resultMap>
+
+    <select id="findMyMatchingHistory" parameterType="long" resultMap="MatchingHistoryMap">
+        SELECT
+            mr.matching_record_id,
+            mr.order_id,
+            o.order_no,
+            DATE(mr.created_at) AS assigned_date,
+            mr.matching_status
+        FROM matching_record mr
+        JOIN orders o ON mr.order_id = o.order_id
+        WHERE mr.employee_id = #{employeeId}
+        ORDER BY mr.created_at DESC
+    </select>
+
+</mapper>
