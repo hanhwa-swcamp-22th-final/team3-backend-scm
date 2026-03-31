@@ -84,4 +84,21 @@
         ORDER BY mr.created_at DESC
     </select>
 
+    <!-- ===== findMyTaskSummary ===== -->
+    <!-- 작업자의 상태별 작업 수 집계. CONFIRM·INPROGRESS·COMPLETE 상태별 카운트를 반환한다. -->
+    <resultMap id="TaskSummaryMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.WorkerTaskSummaryDto">
+        <result property="assignedCount"   column="assigned_count"/>
+        <result property="inProgressCount" column="in_progress_count"/>
+        <result property="completedCount"  column="completed_count"/>
+    </resultMap>
+
+    <select id="findMyTaskSummary" parameterType="long" resultMap="TaskSummaryMap">
+        SELECT
+            COALESCE(SUM(CASE WHEN matching_status = 'CONFIRM'     THEN 1 ELSE 0 END), 0) AS assigned_count,
+            COALESCE(SUM(CASE WHEN matching_status = 'INPROGRESS'  THEN 1 ELSE 0 END), 0) AS in_progress_count,
+            COALESCE(SUM(CASE WHEN matching_status = 'COMPLETE'    THEN 1 ELSE 0 END), 0) AS completed_count
+        FROM matching_record
+        WHERE employee_id = #{employeeId}
+    </select>
+
 </mapper>

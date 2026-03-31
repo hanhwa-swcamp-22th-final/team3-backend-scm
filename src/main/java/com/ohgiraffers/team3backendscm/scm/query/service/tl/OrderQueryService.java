@@ -1,6 +1,7 @@
 package com.ohgiraffers.team3backendscm.scm.query.service.tl;
 
 import com.ohgiraffers.team3backendscm.scm.query.dto.request.OrderQueryRequest;
+import com.ohgiraffers.team3backendscm.scm.query.dto.response.OcsaSummaryDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.OrderDetailDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.OrderOcsaDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.OrderReadDto;
@@ -25,7 +26,7 @@ public class OrderQueryService {
     /**
      * 검색 조건에 따라 주문 목록을 조회한다.
      *
-     * @param request 상태 필터, 키워드, 페이징 조건을 담은 요청 DTO
+     * @param request 상태·난이도 등급 필터, 키워드, 페이징 조건을 담은 요청 DTO
      * @return 조건에 맞는 주문 요약 목록
      */
     public List<OrderReadDto> getOrders(OrderQueryRequest request) {
@@ -39,6 +40,15 @@ public class OrderQueryService {
      */
     public List<OrderReadDto> getUrgentOrders() {
         return orderMapper.findUrgentOrders();
+    }
+
+    /**
+     * OCSA 분석 완료 후 기술자가 배정되지 않은 주문(ANALYZED 상태) 목록을 조회한다.
+     *
+     * @return 미배정 주문 목록
+     */
+    public List<OrderReadDto> getUnassignedOrders() {
+        return orderMapper.findUnassignedOrders();
     }
 
     /**
@@ -68,5 +78,14 @@ public class OrderQueryService {
      */
     public OrderOcsaDto getOrderOcsa(Long orderId) {
         return orderMapper.findOrderOcsa(orderId);
+    }
+
+    /**
+     * OCSA 분석 현황 요약(분석 주문 수, 평균 난이도 점수, 최고 난이도 등급)을 조회한다.
+     *
+     * @return OCSA 요약 DTO
+     */
+    public OcsaSummaryDto getOcsaSummary() {
+        return orderMapper.findOcsaSummary();
     }
 }

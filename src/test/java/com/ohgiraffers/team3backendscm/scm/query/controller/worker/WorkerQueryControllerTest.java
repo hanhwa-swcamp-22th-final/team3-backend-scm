@@ -1,6 +1,7 @@
 package com.ohgiraffers.team3backendscm.scm.query.controller.worker;
 
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.TaskDto;
+import com.ohgiraffers.team3backendscm.scm.query.dto.response.WorkerTaskSummaryDto;
 import com.ohgiraffers.team3backendscm.scm.query.service.worker.WorkerQueryService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -60,6 +61,18 @@ class WorkerQueryControllerTest {
 
         // when / then
         mockMvc.perform(get("/api/v1/scm/workers/me/matching-history").param("employeeId", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/scm/tasks/summary?employeeId=10 → 200 OK")
+    void getMyTaskSummary_Return200() throws Exception {
+        // given
+        given(workerQueryService.getMyTaskSummary(anyLong())).willReturn(new WorkerTaskSummaryDto());
+
+        // when / then
+        mockMvc.perform(get("/api/v1/scm/tasks/summary").param("employeeId", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }

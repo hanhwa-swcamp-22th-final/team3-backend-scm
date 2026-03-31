@@ -106,6 +106,17 @@ class AssignmentMapperTest {
 
             assertNotNull(result, "요약 DTO가 null 이면 안 된다");
         }
+
+        @Test
+        @DisplayName("activeWorkerCount 가 0 이상으로 매핑된다")
+        void findSummary_ActiveWorkerCountIsNonNegative() {
+            AssignmentSummaryDto result = assignmentMapper.findSummary();
+            assumeTrue(result != null, "요약 DTO 없음 — skip");
+            assumeTrue(result.getActiveWorkerCount() != null, "activeWorkerCount 없음 — skip");
+
+            assertTrue(result.getActiveWorkerCount() >= 0,
+                    "activeWorkerCount 는 음수가 될 수 없다");
+        }
     }
 
     // ===== findTimeline =====

@@ -3,6 +3,7 @@ package com.ohgiraffers.team3backendscm.scm.query.mapper;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.TaskDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.WorkerDeploymentDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.WorkerMatchingHistoryDto;
+import com.ohgiraffers.team3backendscm.scm.query.dto.response.WorkerTaskSummaryDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -145,6 +146,47 @@ class WorkerMapperTest {
             assertNotNull(first.getMatchingRecordId(), "matchingRecordId 매핑 확인");
             assertNotNull(first.getOrderNumber(),      "orderNumber 매핑 확인");
             assertNotNull(first.getStatus(),           "status 매핑 확인");
+        }
+    }
+
+    // ===== findMyTaskSummary =====
+
+    @Nested
+    @DisplayName("findMyTaskSummary — 작업 현황 집계 조회")
+    class FindMyTaskSummary {
+
+        @Test
+        @DisplayName("SQL 실행 및 ResultMap 매핑이 오류 없이 완료되고 DTO가 반환된다")
+        void findMyTaskSummary_ReturnsDto() {
+            assumeTrue(workerEmployeeId != null, "WORKER 직원 데이터 없음 — skip");
+
+            WorkerTaskSummaryDto result = workerMapper.findMyTaskSummary(workerEmployeeId);
+
+            assertNotNull(result, "요약 DTO가 null 이면 안 된다");
+        }
+
+        @Test
+        @DisplayName("집계 값들이 모두 0 이상이다")
+        void findMyTaskSummary_CountsAreNonNegative() {
+            assumeTrue(workerEmployeeId != null, "WORKER 직원 데이터 없음 — skip");
+
+            WorkerTaskSummaryDto result = workerMapper.findMyTaskSummary(workerEmployeeId);
+            assumeTrue(result != null, "요약 DTO 없음 — skip");
+
+            assertTrue(result.getAssignedCount()   >= 0, "assignedCount 음수 불가");
+            assertTrue(result.getInProgressCount() >= 0, "inProgressCount 음수 불가");
+            assertTrue(result.getCompletedCount()  >= 0, "completedCount 음수 불가");
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 직원 ID로 조회하면 모든 카운트가 0이다")
+        void findMyTaskSummary_ReturnsZeroCounts_WhenEmployeeNotExists() {
+            WorkerTaskSummaryDto result = workerMapper.findMyTaskSummary(-1L);
+
+            assertNotNull(result, "존재하지 않는 직원 ID도 DTO를 반환해야 한다");
+            assertTrue(result.getAssignedCount()   == 0, "데이터 없으면 assignedCount는 0이어야 한다");
+            assertTrue(result.getInProgressCount() == 0, "데이터 없으면 inProgressCount는 0이어야 한다");
+            assertTrue(result.getCompletedCount()  == 0, "데이터 없으면 completedCount는 0이어야 한다");
         }
     }
 

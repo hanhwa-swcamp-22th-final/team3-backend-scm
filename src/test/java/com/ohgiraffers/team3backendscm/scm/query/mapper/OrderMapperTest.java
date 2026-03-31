@@ -1,7 +1,9 @@
 package com.ohgiraffers.team3backendscm.scm.query.mapper;
 
+import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.DifficultyGrade;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.OrderStatus;
 import com.ohgiraffers.team3backendscm.scm.query.dto.request.OrderQueryRequest;
+import com.ohgiraffers.team3backendscm.scm.query.dto.response.OcsaSummaryDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.OrderDetailDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.OrderOcsaDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.OrderReadDto;
@@ -42,8 +44,9 @@ class OrderMapperTest {
 
     @BeforeEach
     void setUp() {
-        validOrderId = jdbcTemplate.queryForObject(
-                "SELECT order_id FROM orders LIMIT 1", Long.class);
+        // queryForObject 는 결과 없을 때 예외를 던지므로 queryForList 로 안전하게 조회한다
+        List<Long> ids = jdbcTemplate.queryForList("SELECT order_id FROM orders LIMIT 1", Long.class);
+        validOrderId = ids.isEmpty() ? null : ids.get(0);
     }
 
     // ===== findOrders =====
@@ -101,6 +104,17 @@ class OrderMapperTest {
             List<OrderReadDto> paged = orderMapper.findOrders(pagedRequest);
 
             assertTrue(paged.size() <= 1, "size=1 페이징 결과는 최대 1건이어야 한다");
+        }
+
+        @Test
+        @DisplayName("difficultyGrade 필터를 지정하면 SQL 오류 없이 실행된다")
+        void findOrders_WithDifficultyGradeFilter_ExecutesWithoutError() {
+            OrderQueryRequest request = new OrderQueryRequest();
+            request.setDifficultyGrade(DifficultyGrade.D3);
+
+            List<OrderReadDto> result = orderMapper.findOrders(request);
+
+            assertNotNull(result, "결과 리스트가 null 이면 안 된다");
         }
     }
 
@@ -207,6 +221,57 @@ class OrderMapperTest {
             OrderOcsaDto result = orderMapper.findOrderOcsa(-1L);
 
             assertTrue(result == null, "없는 주문 ID 조회 결과는 null 이어야 한다");
+        }
+    }
+
+    // ===== findUnassignedOrders =====
+
+    @Nested
+    @DisplayName("findUnassignedOrders — 미배정 주문 목록 조회 (ANALYZED 상태)")
+    class FindUnassignedOrders {
+
+        @Test
+        @DisplayName("SQL 실행 및 ResultMap 매핑이 오류 없이 완료된다")
+        void findUnassignedOrders_ExecutesWithoutError() {
+            List<OrderReadDto> result = orderMapper.findUnassignedOrders();
+
+            assertNotNull(result, "결과 리스트가 null 이면 안 된다");
+        }
+
+        @Test
+        @DisplayName("반환된 주문은 모두 ANALYZED 상태다")
+        void findUnassignedOrders_ReturnsOnlyAnalyzed() {
+            List<OrderReadDto> result = orderMapper.findUnassignedOrders();
+            assumeTrue(!result.isEmpty(), "ANALYZED 상태 주문 데이터 없음 — skip");
+
+            result.forEach(dto ->
+                    assertTrue(OrderStatus.ANALYZED == dto.getStatus(),
+                            "미배정 목록에 ANALYZED 외 상태가 포함되면 안 된다"));
+        }
+    }
+
+    // ===== findOcsaSummary =====
+
+    @Nested
+    @DisplayName("findOcsaSummary — OCSA 분석 현황 요약 집계 조회")
+    class FindOcsaSummary {
+
+        @Test
+        @DisplayName("SQL 실행 및 ResultMap 매핑이 오류 없이 완료되고 DTO가 반환된다")
+        void findOcsaSummary_ReturnsDto() {
+            OcsaSummaryDto result = orderMapper.findOcsaSummary();
+
+            assertNotNull(result, "OCSA 요약 DTO가 null 이면 안 된다");
+        }
+
+        @Test
+        @DisplayName("집계 값이 존재하면 analyzedOrderCount 가 0 이상이다")
+        void findOcsaSummary_CountIsNonNegative() {
+            OcsaSummaryDto result = orderMapper.findOcsaSummary();
+            assumeTrue(result.getAnalyzedOrderCount() != null, "집계 데이터 없음 — skip");
+
+            assertTrue(result.getAnalyzedOrderCount() >= 0,
+                    "analyzedOrderCount 는 음수가 될 수 없다");
         }
     }
 }

@@ -3,6 +3,7 @@ package com.ohgiraffers.team3backendscm.scm.query.service.worker;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.TaskDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.WorkerDeploymentDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.WorkerMatchingHistoryDto;
+import com.ohgiraffers.team3backendscm.scm.query.dto.response.WorkerTaskSummaryDto;
 import com.ohgiraffers.team3backendscm.scm.query.mapper.WorkerMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -48,5 +49,16 @@ public class WorkerQueryService {
      */
     public List<WorkerMatchingHistoryDto> getMyMatchingHistory(Long employeeId) {
         return workerMapper.findMyMatchingHistory(employeeId);
+    }
+
+    /**
+     * 특정 작업자의 상태별 작업 수를 집계한다.
+     * CONFIRM·INPROGRESS·COMPLETE 상태별 카운트를 반환한다.
+     *
+     * @param employeeId 조회할 작업자(직원) ID
+     * @return 상태별 작업 수 집계 DTO
+     */
+    public WorkerTaskSummaryDto getMyTaskSummary(Long employeeId) {
+        return workerMapper.findMyTaskSummary(employeeId);
     }
 }

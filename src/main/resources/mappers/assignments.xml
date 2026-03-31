@@ -77,17 +77,23 @@
         <result property="todayAssignedCount" column="today_assigned_count"/>
         <result property="unassignedCount"    column="unassigned_count"/>
         <result property="accuracy"           column="accuracy"/>
+        <result property="activeWorkerCount"  column="active_worker_count"/>
     </resultMap>
 
     <select id="findSummary" resultMap="SummaryMap">
         SELECT
             SUM(CASE WHEN DATE(mr.created_at) = CURDATE() THEN 1 ELSE 0 END) AS today_assigned_count,
-            SUM(CASE WHEN o.order_status = 'ANALYZED' THEN 1 ELSE 0 END) AS unassigned_count,
+            SUM(CASE WHEN o.order_status = 'ANALYZED' THEN 1 ELSE 0 END)     AS unassigned_count,
             ROUND(
                 SUM(CASE WHEN mr.matching_status = 'CONFIRM' THEN 1 ELSE 0 END) * 100.0
                 / NULLIF(COUNT(mr.matching_record_id), 0),
                 1
-            ) AS accuracy
+            ) AS accuracy,
+            (
+                SELECT COUNT(DISTINCT employee_id)
+                FROM matching_record
+                WHERE matching_status = 'INPROGRESS'
+            ) AS active_worker_count
         FROM orders o
         LEFT JOIN matching_record mr ON o.order_id = mr.order_id
     </select>
