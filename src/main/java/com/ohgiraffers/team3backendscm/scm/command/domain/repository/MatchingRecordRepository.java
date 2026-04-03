@@ -1,7 +1,7 @@
 package com.ohgiraffers.team3backendscm.scm.command.domain.repository;
 
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingRecord;
-import org.springframework.data.jpa.repository.JpaRepository;
+import com.ohgiraffers.team3backendscm.scm.command.infrastructure.repository.JpaMatchingRecordRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -9,10 +9,11 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * MatchingRecord 엔티티에 대한 JPA 리포지토리 인터페이스.
- * 기본 CRUD 외에 기술자 중복 배정 방지를 위한 당일 배정 이력 조회 쿼리를 제공한다.
+ * MatchingRecord 에 대한 도메인 리포지토리 인터페이스.
+ * JPA 구현체는 {@link JpaMatchingRecordRepository} 에 위임하며,
+ * 기술자·날짜 기준 배정 이력 조회 커스텀 쿼리를 추가로 제공한다.
  */
-public interface MatchingRecordRepository extends JpaRepository<MatchingRecord, Long> {
+public interface MatchingRecordRepository extends JpaMatchingRecordRepository {
 
     /**
      * 특정 기술자의 특정 날짜 배정 이력을 조회한다.

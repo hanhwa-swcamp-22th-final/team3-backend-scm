@@ -2,6 +2,7 @@ package com.ohgiraffers.team3backendscm.scm.query.controller.tl;
 
 import com.ohgiraffers.team3backendscm.scm.query.controller.tl.OrderQueryController;
 import com.ohgiraffers.team3backendscm.scm.query.dto.request.OrderQueryRequest;
+import com.ohgiraffers.team3backendscm.scm.query.dto.response.OcsaSummaryDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.OrderDetailDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.OrderOcsaDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.OrderSummaryDto;
@@ -87,6 +88,30 @@ class OrderQueryControllerTest {
 
         // when / then
         mockMvc.perform(get("/api/v1/scm/orders/1/ocsa"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/scm/orders/unassigned → 200 OK")
+    void getUnassignedOrders_Return200() throws Exception {
+        // given
+        given(orderQueryService.getUnassignedOrders()).willReturn(List.of());
+
+        // when / then
+        mockMvc.perform(get("/api/v1/scm/orders/unassigned"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/scm/orders/ocsa/summary → 200 OK")
+    void getOcsaSummary_Return200() throws Exception {
+        // given
+        given(orderQueryService.getOcsaSummary()).willReturn(new OcsaSummaryDto());
+
+        // when / then
+        mockMvc.perform(get("/api/v1/scm/orders/ocsa/summary"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }

@@ -1,6 +1,7 @@
 package com.ohgiraffers.team3backendscm.scm.query.service.worker;
 
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.TaskDto;
+import com.ohgiraffers.team3backendscm.scm.query.dto.response.WorkerTaskSummaryDto;
 import com.ohgiraffers.team3backendscm.scm.query.mapper.WorkerMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,9 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -65,5 +69,22 @@ class WorkerQueryServiceTest {
 
         // then
         verify(workerMapper, times(1)).findMyMatchingHistory(anyLong());
+    }
+
+    @Test
+    @DisplayName("작업 현황 집계 조회 시 Mapper가 1회 호출되고 결과를 반환한다")
+    void getMyTaskSummary_ReturnsSummary() {
+        // given
+        WorkerTaskSummaryDto mockSummary = new WorkerTaskSummaryDto(2, 1, 5);
+        given(workerMapper.findMyTaskSummary(anyLong())).willReturn(mockSummary);
+
+        // when
+        WorkerTaskSummaryDto result = workerQueryService.getMyTaskSummary(10L);
+
+        // then
+        verify(workerMapper, times(1)).findMyTaskSummary(anyLong());
+        assertEquals(2, result.getAssignedCount());
+        assertEquals(1, result.getInProgressCount());
+        assertEquals(5, result.getCompletedCount());
     }
 }

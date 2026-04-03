@@ -2,6 +2,7 @@ package com.ohgiraffers.team3backendscm.scm.query.service.tl;
 
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.OrderStatus;
 import com.ohgiraffers.team3backendscm.scm.query.dto.request.OrderQueryRequest;
+import com.ohgiraffers.team3backendscm.scm.query.dto.response.OcsaSummaryDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.OrderDetailDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.OrderOcsaDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.OrderReadDto;
@@ -79,7 +80,7 @@ class OrderQueryServiceTest {
     @DisplayName("주문 요약 조회 시 Mapper가 1회 호출되고 결과를 반환한다")
     void getOrderSummary_ReturnsSummary() {
         // given
-        OrderSummaryDto mockSummary = new OrderSummaryDto(10, 5, 2, 80.0);
+        OrderSummaryDto mockSummary = new OrderSummaryDto(10, 5, 2, 80.0, 3, 4, 3);
         given(orderMapper.findOrderSummary()).willReturn(mockSummary);
 
         // when
@@ -102,5 +103,34 @@ class OrderQueryServiceTest {
 
         // then
         verify(orderMapper, times(1)).findOrderOcsa(anyLong());
+    }
+
+    @Test
+    @DisplayName("미배정 주문 조회 시 Mapper가 1회 호출된다")
+    void getUnassignedOrders_CallsMapperOnce() {
+        // given
+        given(orderMapper.findUnassignedOrders()).willReturn(List.of());
+
+        // when
+        orderQueryService.getUnassignedOrders();
+
+        // then
+        verify(orderMapper, times(1)).findUnassignedOrders();
+    }
+
+    @Test
+    @DisplayName("OCSA 요약 조회 시 Mapper가 1회 호출되고 결과를 반환한다")
+    void getOcsaSummary_ReturnsSummary() {
+        // given
+        OcsaSummaryDto mockSummary = new OcsaSummaryDto(5, 3.2, "D4");
+        given(orderMapper.findOcsaSummary()).willReturn(mockSummary);
+
+        // when
+        OcsaSummaryDto result = orderQueryService.getOcsaSummary();
+
+        // then
+        verify(orderMapper, times(1)).findOcsaSummary();
+        assertEquals(5, result.getAnalyzedOrderCount());
+        assertEquals("D4", result.getMaxDifficultyGrade());
     }
 }

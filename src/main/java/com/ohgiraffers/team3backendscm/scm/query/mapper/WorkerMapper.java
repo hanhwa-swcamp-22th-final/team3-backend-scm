@@ -3,6 +3,7 @@ package com.ohgiraffers.team3backendscm.scm.query.mapper;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.TaskDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.WorkerDeploymentDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.WorkerMatchingHistoryDto;
+import com.ohgiraffers.team3backendscm.scm.query.dto.response.WorkerTaskSummaryDto;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.List;
 /**
  * 작업자(Worker) 본인 조회 전용 MyBatis 매퍼 인터페이스.
  * 작업자가 자신의 설비 배치 이력과 주문 배정 이력을 조회할 때 사용한다.
- * SQL은 src/main/resources/mappers/ 에 정의된다.
+ * SQL은 src/main/resources/mappers/workers.xml 에 정의된다.
  */
 @Mapper
 public interface WorkerMapper {
@@ -39,4 +40,13 @@ public interface WorkerMapper {
      * @return 주문 배정 이력 목록
      */
     List<WorkerMatchingHistoryDto> findMyMatchingHistory(Long employeeId);
+
+    /**
+     * 특정 작업자의 상태별 작업 수를 집계한다.
+     * CONFIRM·INPROGRESS·COMPLETE 상태별 카운트를 반환한다.
+     *
+     * @param employeeId 조회할 작업자(직원) ID
+     * @return 상태별 작업 수 집계 DTO
+     */
+    WorkerTaskSummaryDto findMyTaskSummary(Long employeeId);
 }
