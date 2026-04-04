@@ -50,4 +50,31 @@ public class Product {
     @LastModifiedBy
     @Column(name = "updated_by")
     private Long updatedBy; // 레코드 최종 수정자 (employee_id)
+
+    /**
+     * Admin이 제품을 등록할 때 사용하는 정적 팩토리 메서드.
+     *
+     * @param id          제품 PK (IdGenerator로 생성)
+     * @param productName 제품 명칭
+     * @param productCode 제품 고유 코드
+     * @return 생성된 Product 인스턴스
+     */
+    public static Product create(Long id, String productName, String productCode) {
+        Product product = new Product();
+        product.productId = id;
+        product.productName = productName;
+        product.productCode = productCode;
+        return product;
+    }
+
+    /**
+     * 제품 정보를 수정한다. Admin이 제품명·코드 변경 시 호출한다.
+     *
+     * @param productName 변경할 제품 명칭
+     * @param productCode 변경할 제품 코드
+     */
+    public void update(String productName, String productCode) {
+        this.productName = productName;
+        this.productCode = productCode;
+    }
 }

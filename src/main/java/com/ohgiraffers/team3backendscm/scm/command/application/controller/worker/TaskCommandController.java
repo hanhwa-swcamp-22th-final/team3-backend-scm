@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.*;
  * <p>
  * 제공 엔드포인트:
  * <ul>
- *   <li>POST /tasks/{taskId}/start         - 작업 시작</li>
- *   <li>POST /tasks/{taskId}/finish-draft  - 작업 종료 임시저장</li>
- *   <li>POST /tasks/{taskId}/finish        - 작업 종료 제출</li>
+ *   <li>POST /workers/me/today-tasks/{taskId}/start         - 작업 시작</li>
+ *   <li>POST /workers/me/today-tasks/{taskId}/finish-draft  - 작업 종료 임시저장</li>
+ *   <li>POST /workers/me/today-tasks/{taskId}/finish        - 작업 종료 제출</li>
  * </ul>
  * </p>
  */
@@ -33,7 +33,7 @@ public class TaskCommandController {
      * @param taskId 시작할 작업의 배정 기록 ID (matching_record_id)
      * @return 성공 여부를 담은 ApiResponse (data = null)
      */
-    @PostMapping("/tasks/{taskId}/start")
+    @PostMapping("/workers/me/today-tasks/{taskId}/start")
     public ResponseEntity<ApiResponse<Void>> startTask(@PathVariable Long taskId) {
         taskCommandService.startTask(taskId);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -47,7 +47,7 @@ public class TaskCommandController {
      * @param request 코멘트를 담은 요청 DTO
      * @return 성공 여부를 담은 ApiResponse (data = null)
      */
-    @PostMapping("/tasks/{taskId}/finish-draft")
+    @PostMapping("/workers/me/today-tasks/{taskId}/finish-draft")
     public ResponseEntity<ApiResponse<Void>> finishDraft(
             @PathVariable Long taskId,
             @RequestBody TaskFinishRequest request) {
@@ -63,7 +63,7 @@ public class TaskCommandController {
      * @param request 코멘트를 담은 요청 DTO
      * @return 성공 여부를 담은 ApiResponse (data = null)
      */
-    @PostMapping("/tasks/{taskId}/finish")
+    @PostMapping("/workers/me/today-tasks/{taskId}/finish")
     public ResponseEntity<ApiResponse<Void>> finish(
             @PathVariable Long taskId,
             @RequestBody TaskFinishRequest request) {

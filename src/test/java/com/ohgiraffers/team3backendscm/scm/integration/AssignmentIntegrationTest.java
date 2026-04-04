@@ -14,6 +14,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -32,6 +33,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -110,6 +112,8 @@ class AssignmentIntegrationTest {
     }
 
     // @AfterEach 불필요: @Transactional 이 테스트 종료 후 자동 롤백을 보장한다.
+
+    // ===== 성공 케이스 =====
 
     @Test
     @DisplayName("배정 전체 흐름: API 호출 → 주문 상태 INPROGRESS 전환 → MatchingRecord DB 저장")
@@ -214,5 +218,94 @@ class AssignmentIntegrationTest {
         // then - 주문 상태가 ANALYZED 로 롤백되었는지 확인
         Order rolledBack = orderRepository.findById(inprogressOrderId).orElseThrow();
         assertEquals(OrderStatus.ANALYZED, rolledBack.getStatus());
+    }
+
+    // ===== 예외 케이스 =====
+
+    @Nested
+    @DisplayName("배정(assign) 예외")
+    class AssignFail {
+
+        @Test
+        @DisplayName("존재하지 않는 주문 ID로 배정 요청 시 404를 반환한다")
+        void assign_Fail_WhenOrderNotFound() throws Exception {
+            AssignRequest request = new AssignRequest(-1L, testEmployeeId);
+
+            mockMvc.perform(post("/api/v1/scm/assignments")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("ANALYZED 상태가 아닌 주문(REGISTERED)에 배정 요청 시 400을 반환한다")
+        void assign_Fail_WhenNotAnalyzed() throws Exception {
+            // REGISTERED 상태 주문 별도 삽입
+            Long registeredOrderId = idGenerator.generate();
+            jdbcTemplate.update(
+                    "INSERT INTO orders (order_id, product_id, config_id, order_no, order_quantity, order_status, order_deadline) " +
+                    "VALUES (?, ?, ?, ?, 1, 'REGISTERED', ?)",
+                    registeredOrderId, testProductId, testConfigId,
+                    "ORD-REG-" + registeredOrderId,
+                    LocalDate.now().plusDays(5).toString());
+
+            AssignRequest request = new AssignRequest(registeredOrderId, testEmployeeId);
+
+            mockMvc.perform(post("/api/v1/scm/assignments")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Nested
+    @DisplayName("재배정(reassign) 예외")
+    class ReassignFail {
+
+        @Test
+        @DisplayName("존재하지 않는 배정 ID로 재배정 요청 시 404를 반환한다")
+        void reassign_Fail_WhenRecordNotFound() throws Exception {
+            ReassignRequest request = new ReassignRequest(testEmployeeId);
+
+            mockMvc.perform(put("/api/v1/scm/assignments/-1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isNotFound());
+        }
+    }
+
+    @Nested
+    @DisplayName("배정 취소(cancel) 예외")
+    class CancelFail {
+
+        @Test
+        @DisplayName("존재하지 않는 배정 ID로 취소 요청 시 404를 반환한다")
+        void cancel_Fail_WhenRecordNotFound() throws Exception {
+            mockMvc.perform(delete("/api/v1/scm/assignments/-1"))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("이미 COMPLETE 상태인 배정 취소 요청 시 400을 반환한다")
+        void cancel_Fail_WhenAlreadyComplete() throws Exception {
+            // COMPLETE 상태 배정 기록 삽입
+            Long completedOrderId  = idGenerator.generate();
+            Long completedRecordId = idGenerator.generate();
+
+            jdbcTemplate.update(
+                    "INSERT INTO orders (order_id, product_id, config_id, order_no, order_quantity, order_status, order_deadline) " +
+                    "VALUES (?, ?, ?, ?, 1, 'COMPLETED', ?)",
+                    completedOrderId, testProductId, testConfigId,
+                    "ORD-DONE-" + completedOrderId,
+                    LocalDate.now().plusDays(5).toString());
+
+            jdbcTemplate.update(
+                    "INSERT INTO matching_record (matching_record_id, order_id, employee_id, matching_status, created_at) " +
+                    "VALUES (?, ?, ?, 'COMPLETE', NOW())",
+                    completedRecordId, completedOrderId, testEmployeeId);
+
+            mockMvc.perform(delete("/api/v1/scm/assignments/" + completedRecordId))
+                    .andExpect(status().isBadRequest());
+        }
     }
 }

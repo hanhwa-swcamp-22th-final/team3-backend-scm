@@ -13,6 +13,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -116,11 +117,13 @@ class TaskIntegrationTest {
                 testMatchingRecordId, testOrderId, testEmployeeId);
     }
 
+    // ===== 성공 케이스 =====
+
     @Test
     @DisplayName("작업 시작 전체 흐름: POST /tasks/{taskId}/start → workStartAt DB 기록")
     void startTask_FullFlow() throws Exception {
-        // when - POST /api/v1/scm/tasks/{taskId}/start
-        mockMvc.perform(post("/api/v1/scm/tasks/" + testMatchingRecordId + "/start"))
+        // when - POST /api/v1/scm/workers/me/today-tasks/{taskId}/start
+        mockMvc.perform(post("/api/v1/scm/workers/me/today-tasks/" + testMatchingRecordId + "/start"))
                 .andExpect(status().isOk());
 
         entityManager.flush();
@@ -139,8 +142,8 @@ class TaskIntegrationTest {
         // given
         TaskFinishRequest request = new TaskFinishRequest("임시 저장 코멘트");
 
-        // when - POST /api/v1/scm/tasks/{taskId}/finish-draft
-        mockMvc.perform(post("/api/v1/scm/tasks/" + testMatchingRecordId + "/finish-draft")
+        // when - POST /api/v1/scm/workers/me/today-tasks/{taskId}/finish-draft
+        mockMvc.perform(post("/api/v1/scm/workers/me/today-tasks/" + testMatchingRecordId + "/finish-draft")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
@@ -162,8 +165,8 @@ class TaskIntegrationTest {
         // given
         TaskFinishRequest request = new TaskFinishRequest("최종 완료 코멘트");
 
-        // when - POST /api/v1/scm/tasks/{taskId}/finish
-        mockMvc.perform(post("/api/v1/scm/tasks/" + testMatchingRecordId + "/finish")
+        // when - POST /api/v1/scm/workers/me/today-tasks/{taskId}/finish
+        mockMvc.perform(post("/api/v1/scm/workers/me/today-tasks/" + testMatchingRecordId + "/finish")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
@@ -180,5 +183,85 @@ class TaskIntegrationTest {
         // then - 연관 주문 상태가 COMPLETED 로 전환되었는지 확인
         Order order = orderRepository.findById(testOrderId).orElseThrow();
         assertEquals(OrderStatus.COMPLETED, order.getStatus());
+    }
+
+    // ===== 예외 케이스 =====
+
+    @Nested
+    @DisplayName("작업 시작(start) 예외")
+    class StartTaskFail {
+
+        @Test
+        @DisplayName("존재하지 않는 작업 ID로 시작 요청 시 404를 반환한다")
+        void startTask_Fail_WhenNotFound() throws Exception {
+            mockMvc.perform(post("/api/v1/scm/workers/me/today-tasks/-1/start"))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("이미 시작된 작업을 다시 시작 요청 시 400을 반환한다")
+        void startTask_Fail_WhenAlreadyStarted() throws Exception {
+            // 첫 번째 시작 — 성공
+            mockMvc.perform(post("/api/v1/scm/workers/me/today-tasks/" + testMatchingRecordId + "/start"))
+                    .andExpect(status().isOk());
+
+            entityManager.flush();
+            entityManager.clear();
+
+            // 두 번째 시작 — MatchingRecord.startWork() 도메인 예외 발생
+            mockMvc.perform(post("/api/v1/scm/workers/me/today-tasks/" + testMatchingRecordId + "/start"))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Nested
+    @DisplayName("작업 임시저장(finish-draft) 예외")
+    class FinishDraftFail {
+
+        @Test
+        @DisplayName("존재하지 않는 작업 ID로 임시저장 요청 시 404를 반환한다")
+        void finishDraft_Fail_WhenNotFound() throws Exception {
+            TaskFinishRequest request = new TaskFinishRequest("코멘트");
+
+            mockMvc.perform(post("/api/v1/scm/workers/me/today-tasks/-1/finish-draft")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isNotFound());
+        }
+    }
+
+    @Nested
+    @DisplayName("작업 종료 제출(finish) 예외")
+    class FinishFail {
+
+        @Test
+        @DisplayName("존재하지 않는 작업 ID로 종료 제출 시 404를 반환한다")
+        void finish_Fail_WhenNotFound() throws Exception {
+            TaskFinishRequest request = new TaskFinishRequest("코멘트");
+
+            mockMvc.perform(post("/api/v1/scm/workers/me/today-tasks/-1/finish")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("이미 COMPLETE 상태인 배정 기록에 종료 제출 시 400을 반환한다")
+        void finish_Fail_WhenAlreadyComplete() throws Exception {
+            // 먼저 정상 종료 처리
+            mockMvc.perform(post("/api/v1/scm/workers/me/today-tasks/" + testMatchingRecordId + "/finish")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(new TaskFinishRequest("1차 완료"))))
+                    .andExpect(status().isOk());
+
+            entityManager.flush();
+            entityManager.clear();
+
+            // COMPLETE 상태에서 finish 재시도 — order.complete() 도메인 예외 발생
+            mockMvc.perform(post("/api/v1/scm/workers/me/today-tasks/" + testMatchingRecordId + "/finish")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(new TaskFinishRequest("2차 시도"))))
+                    .andExpect(status().isBadRequest());
+        }
     }
 }
