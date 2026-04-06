@@ -185,6 +185,53 @@ public class Order {
     }
 
     /**
+     * Admin이 주문을 최초 등록할 때 사용하는 정적 팩토리 메서드.
+     * 초기 상태는 항상 REGISTERED로 고정된다.
+     *
+     * @param id           주문 PK (IdGenerator로 생성)
+     * @param productId    주문 대상 제품 ID
+     * @param configId     OCSA 가중치 설정 ID
+     * @param orderNumber  사람이 읽을 수 있는 주문 번호
+     * @param quantity     주문 수량
+     * @param dueDate      납기 마감일
+     * @param isFirstOrder 해당 제품의 최초 주문 여부
+     * @return 생성된 Order 인스턴스 (REGISTERED 상태)
+     */
+    public static Order register(Long id, Long productId, Long configId, String orderNumber,
+                                 Integer quantity, LocalDate dueDate, Boolean isFirstOrder) {
+        Order order = new Order();
+        order.orderId = id;
+        order.productId = productId;
+        order.configId = configId;
+        order.orderNumber = orderNumber;
+        order.orderQuantity = quantity;
+        order.dueDate = dueDate;
+        order.isFirstOrder = isFirstOrder;
+        order.status = OrderStatus.REGISTERED;
+        return order;
+    }
+
+    /**
+     * Admin이 주문 기본 정보를 수정한다.
+     * REGISTERED 상태에서만 허용하며, SCM 워크플로우가 시작된 이후에는 수정 불가하다.
+     *
+     * @param productId   변경할 제품 ID
+     * @param orderNumber 변경할 주문 번호
+     * @param quantity    변경할 주문 수량
+     * @param dueDate     변경할 납기 마감일
+     * @throws IllegalStateException REGISTERED 상태가 아닐 경우
+     */
+    public void updateInfo(Long productId, String orderNumber, Integer quantity, LocalDate dueDate) {
+        if (this.status != OrderStatus.REGISTERED) {
+            throw new IllegalStateException("REGISTERED 상태의 주문만 수정할 수 있습니다. 현재 상태: " + this.status);
+        }
+        this.productId = productId;
+        this.orderNumber = orderNumber;
+        this.orderQuantity = quantity;
+        this.dueDate = dueDate;
+    }
+
+    /**
      * 납기 3일 이내이면 긴급 주문으로 판단한다.
      *
      * @return 납기가 오늘로부터 3일 이내이면 true
