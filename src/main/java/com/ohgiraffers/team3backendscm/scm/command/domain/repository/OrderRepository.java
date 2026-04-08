@@ -1,19 +1,10 @@
 package com.ohgiraffers.team3backendscm.scm.command.domain.repository;
 
-import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.Order;
-import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.OrderStatus;
-import org.springframework.data.jpa.repository.JpaRepository;
+import com.ohgiraffers.team3backendscm.scm.command.infrastructure.repository.JpaOrderRepository;
 
-import java.time.LocalDate;
-import java.util.List;
-
-public interface OrderRepository extends JpaRepository<Order, Long> {
-
-    List<Order> findByStatus(OrderStatus status);
-
-    List<Order> findByDueDateBefore(LocalDate deadline);
-
-    default List<Order> findUrgentOrders(LocalDate deadline) {
-        return findByDueDateBefore(deadline);
-    }
+/**
+ * Order 에 대한 도메인 리포지토리 인터페이스.
+ * JPA 구현체는 {@link JpaOrderRepository} 에 위임한다.
+ */
+public interface OrderRepository extends JpaOrderRepository {
 }

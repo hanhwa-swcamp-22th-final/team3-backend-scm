@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ohgiraffers.team3backendscm.scm.query.mapper.FacilityMapper">
+
+    <!-- ===== findFacilities ===== -->
+    <resultMap id="FacilityDtoMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.FacilityDto">
+        <result property="equipmentId"   column="equipment_id"/>
+        <result property="equipmentName" column="equipment_name"/>
+        <result property="status"        column="equipment_status"/>
+        <result property="category"      column="equipment_process_name"/>
+        <result property="managerId"     column="manager_id"/>
+    </resultMap>
+
+    <select id="findFacilities" resultMap="FacilityDtoMap">
+        SELECT
+            e.equipment_id,
+            e.equipment_name,
+            e.equipment_status,
+            ep.equipment_process_name,
+            wd.employee_id AS manager_id
+        FROM equipment e
+        JOIN equipment_process ep ON e.equipment_process_id = ep.equipment_process_id
+        LEFT JOIN worker_deployment wd ON e.equipment_id = wd.equipment_id
+            AND wd.worker_deployment_role = 'PRIMARY'
+            AND (wd.end_date IS NULL OR wd.end_date >= CURDATE())
+    </select>
+
+    <!-- ===== findFacilityHistory ===== -->
+    <resultMap id="FacilityHistoryDtoMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.FacilityHistoryDto">
+        <result property="eventId"     column="environment_event_id"/>
+        <result property="eventType"   column="env_deviation_type"/>
+        <result property="occurredAt"  column="env_detected_at"/>
+        <result property="description" column="description"/>
+    </resultMap>
+
+    <select id="findFacilityHistory" resultMap="FacilityHistoryDtoMap">
+        SELECT
+            ee.environment_event_id,
+            ee.env_deviation_type,
+            ee.env_detected_at,
+            CONCAT('T:', ee.env_temperature, ' H:', ee.env_humidity, ' P:', ee.env_particle_cnt) AS description
+        FROM environment_event ee
+        WHERE ee.equipment_id = #{facilityId}
+        ORDER BY ee.env_detected_at DESC
+    </select>
+
+    <!-- ===== findFacilityDeployments ===== -->
+    <resultMap id="FacilityDeploymentDtoMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.FacilityDeploymentDto">
+        <result property="employeeId"      column="employee_id"/>
+        <result property="employeeName"    column="employee_name"/>
+        <result property="deploymentDate"  column="start_date"/>
+    </resultMap>
+
+    <select id="findFacilityDeployments" resultMap="FacilityDeploymentDtoMap">
+        SELECT
+            e.employee_id,
+            e.employee_name,
+            wd.start_date
+        FROM worker_deployment wd
+        JOIN employee e ON wd.employee_id = e.employee_id
+        WHERE wd.equipment_id = #{facilityId}
+        ORDER BY wd.start_date DESC
+    </select>
+
+    <!-- ===== findFacilitySummary ===== -->
+    <resultMap id="FacilitySummaryMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.FacilitySummaryDto">
+        <result property="totalCount"           column="total_count"/>
+        <result property="operatingCount"       column="operating_count"/>
+        <result property="stoppedCount"         column="stopped_count"/>
+        <result property="underInspectionCount" column="under_inspection_count"/>
+        <result property="disposedCount"        column="disposed_count"/>
+    </resultMap>
+
+    <select id="findFacilitySummary" resultMap="FacilitySummaryMap">
+        SELECT
+            COUNT(*) AS total_count,
+            SUM(CASE WHEN equipment_status = 'OPERATING'        THEN 1 ELSE 0 END) AS operating_count,
+            SUM(CASE WHEN equipment_status = 'STOPPED'          THEN 1 ELSE 0 END) AS stopped_count,
+            SUM(CASE WHEN equipment_status = 'UNDER_INSPECTION' THEN 1 ELSE 0 END) AS under_inspection_count,
+            SUM(CASE WHEN equipment_status = 'DISPOSED'         THEN 1 ELSE 0 END) AS disposed_count
+        FROM equipment
+    </select>
+
+    <!-- ===== findFacilityTrends ===== -->
+    <resultMap id="FacilityTrendsMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.FacilityTrendsDto">
+        <result property="equipmentId"   column="equipment_id"/>
+        <result property="detectedAt"    column="env_detected_at"/>
+        <result property="temperature"   column="env_temperature"/>
+        <result property="humidity"      column="env_humidity"/>
+        <result property="particleCnt"   column="env_particle_cnt"/>
+        <result property="deviationType" column="env_deviation_type"/>
+    </resultMap>
+
+    <select id="findFacilityTrends" resultMap="FacilityTrendsMap">
+        SELECT
+            equipment_id,
+            env_detected_at,
+            env_temperature,
+            env_humidity,
+            env_particle_cnt,
+            env_deviation_type
+        FROM environment_event
+        WHERE equipment_id = #{facilityId}
+        ORDER BY env_detected_at DESC
+    </select>
+
+</mapper>

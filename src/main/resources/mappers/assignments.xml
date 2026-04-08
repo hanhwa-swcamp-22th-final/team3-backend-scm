@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ohgiraffers.team3backendscm.scm.query.mapper.AssignmentMapper">
+
+    <!-- ===== findById ===== -->
+    <resultMap id="DetailMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentDetailDto">
+        <result property="matchingRecordId"      column="matching_record_id"/>
+        <result property="orderId"               column="order_id"/>
+        <result property="orderNo"               column="order_no"/>
+        <result property="orderStatus"           column="order_status"/>
+        <result property="employeeId"            column="employee_id"/>
+        <result property="employeeName"          column="employee_name"/>
+        <result property="tier"                  column="employee_tier"/>
+        <result property="matchingMode"          column="matching_mode"/>
+        <result property="matchingStatus"        column="matching_status"/>
+        <result property="dcRatio"               column="d_c_ratio"/>
+        <result property="expectedBonus"         column="expected_bonus"/>
+        <result property="expectedProductivity"  column="expected_productivity"/>
+        <result property="qualityRisk"           column="quality_risk"/>
+        <result property="workStartAt"           column="work_start_at"/>
+        <result property="workEndAt"             column="work_end_at"/>
+        <result property="comment"               column="comment"/>
+        <result property="assignedAt"            column="created_at"/>
+    </resultMap>
+
+    <select id="findById" parameterType="long" resultMap="DetailMap">
+        SELECT
+            mr.matching_record_id,
+            mr.order_id,
+            o.order_no,
+            o.order_status,
+            mr.employee_id,
+            e.employee_name,
+            e.employee_tier,
+            mr.matching_mode,
+            mr.matching_status,
+            mr.d_c_ratio,
+            mr.expected_bonus,
+            mr.expected_productivity,
+            mr.quality_risk,
+            mr.work_start_at,
+            mr.work_end_at,
+            mr.comment,
+            mr.created_at
+        FROM matching_record mr
+        JOIN orders o ON mr.order_id = o.order_id
+        JOIN employee e ON mr.employee_id = e.employee_id
+        WHERE mr.matching_record_id = #{matchingRecordId}
+    </select>
+
+    <!-- ===== findCandidates ===== -->
+    <resultMap id="CandidateMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentCandidateDto">
+        <result property="employeeId"       column="employee_id"/>
+        <result property="employeeName"     column="employee_name"/>
+        <result property="tier"             column="employee_tier"/>
+        <result property="score"            column="total_points"/>
+        <result property="suitabilityScore" column="capability_index"/>
+    </resultMap>
+
+    <select id="findCandidates" resultMap="CandidateMap">
+        SELECT
+            e.employee_id,
+            e.employee_name,
+            e.employee_tier,
+            s.total_points,
+            s.capability_index
+        FROM employee e
+        LEFT JOIN score s ON e.employee_id = s.employee_id
+        WHERE e.employee_role = 'WORKER'
+          AND e.employee_status = 'ACTIVE'
+        ORDER BY s.total_points DESC
+    </select>
+
+    <!-- ===== findSummary ===== -->
+    <resultMap id="SummaryMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentSummaryDto">
+        <result property="todayAssignedCount" column="today_assigned_count"/>
+        <result property="unassignedCount"    column="unassigned_count"/>
+        <result property="accuracy"           column="accuracy"/>
+        <result property="activeWorkerCount"  column="active_worker_count"/>
+    </resultMap>
+
+    <select id="findSummary" resultMap="SummaryMap">
+        SELECT
+            SUM(CASE WHEN DATE(mr.created_at) = CURDATE() THEN 1 ELSE 0 END) AS today_assigned_count,
+            SUM(CASE WHEN o.order_status = 'ANALYZED' THEN 1 ELSE 0 END)     AS unassigned_count,
+            ROUND(
+                SUM(CASE WHEN mr.matching_status = 'CONFIRM' THEN 1 ELSE 0 END) * 100.0
+                / NULLIF(COUNT(mr.matching_record_id), 0),
+                1
+            ) AS accuracy,
+            (
+                SELECT COUNT(DISTINCT employee_id)
+                FROM matching_record
+                WHERE matching_status = 'INPROGRESS'
+            ) AS active_worker_count
+        FROM orders o
+        LEFT JOIN matching_record mr ON o.order_id = mr.order_id
+    </select>
+
+    <!-- ===== findTimeline ===== -->
+    <resultMap id="TimelineMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentTimelineDto">
+        <result property="factoryLineId"   column="factory_line_id"/>
+        <result property="factoryLineName" column="factory_line_name"/>
+        <result property="employeeId"      column="employee_id"/>
+        <result property="assignedDate"    column="assigned_date"/>
+        <result property="matchingStatus"  column="matching_status"/>
+        <result property="orderNo"         column="order_no"/>
+        <result property="orderStatus"     column="order_status"/>
+    </resultMap>
+
+    <select id="findTimeline" resultMap="TimelineMap">
+        SELECT
+            fl.factory_line_id,
+            fl.factory_line_name,
+            mr.employee_id,
+            DATE(mr.created_at) AS assigned_date,
+            mr.matching_status,
+            o.order_no,
+            o.order_status
+        FROM matching_record mr
+        JOIN orders o ON mr.order_id = o.order_id
+        JOIN worker_deployment wd ON mr.employee_id = wd.employee_id
+            AND DATE(mr.created_at) BETWEEN wd.start_date AND COALESCE(wd.end_date, CURDATE())
+        JOIN equipment eq ON wd.equipment_id = eq.equipment_id
+        JOIN equipment_process ep ON eq.equipment_process_id = ep.equipment_process_id
+        JOIN factory_line fl ON ep.factory_line_id = fl.factory_line_id
+        ORDER BY fl.factory_line_id, assigned_date
+    </select>
+
+    <!-- ===== findRebalance ===== -->
+    <resultMap id="RebalanceMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentRebalanceDto">
+        <result property="factoryLineId"        column="factory_line_id"/>
+        <result property="factoryLineName"      column="factory_line_name"/>
+        <result property="totalTechnicianCount" column="total_technician_count"/>
+        <result property="tierSCount"           column="tier_s_count"/>
+        <result property="tierACount"           column="tier_a_count"/>
+        <result property="tierBCount"           column="tier_b_count"/>
+        <result property="tierCCount"           column="tier_c_count"/>
+        <result property="recommendedCount"     column="recommended_count"/>
+    </resultMap>
+
+    <select id="findRebalance" resultMap="RebalanceMap">
+        SELECT
+            fl.factory_line_id,
+            fl.factory_line_name,
+            COUNT(DISTINCT e.employee_id) AS total_technician_count,
+            SUM(CASE WHEN e.employee_tier = 'S' THEN 1 ELSE 0 END) AS tier_s_count,
+            SUM(CASE WHEN e.employee_tier = 'A' THEN 1 ELSE 0 END) AS tier_a_count,
+            SUM(CASE WHEN e.employee_tier = 'B' THEN 1 ELSE 0 END) AS tier_b_count,
+            SUM(CASE WHEN e.employee_tier = 'C' THEN 1 ELSE 0 END) AS tier_c_count,
+            SUM(CASE WHEN e.employee_tier IN ('B', 'C') THEN 1 ELSE 0 END) AS recommended_count
+        FROM factory_line fl
+        LEFT JOIN equipment_process ep ON fl.factory_line_id = ep.factory_line_id
+        LEFT JOIN equipment eq ON ep.equipment_process_id = eq.equipment_process_id
+        LEFT JOIN worker_deployment wd ON eq.equipment_id = wd.equipment_id
+            AND (wd.end_date IS NULL OR wd.end_date >= CURDATE())
+        LEFT JOIN employee e ON wd.employee_id = e.employee_id
+            AND e.employee_role = 'WORKER'
+        GROUP BY fl.factory_line_id, fl.factory_line_name
+    </select>
+
+</mapper>
