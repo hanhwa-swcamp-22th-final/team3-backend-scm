@@ -1,39 +1,73 @@
 package com.ohgiraffers.team3backendscm.config;
 
+
+import com.ohgiraffers.team3backendscm.jwt.JwtAuthenticationFilter;
+import com.ohgiraffers.team3backendscm.jwt.JwtTokenProvider;
+import com.ohgiraffers.team3backendscm.jwt.RestAccessDeniedHandler;
+import com.ohgiraffers.team3backendscm.jwt.RestAuthenticationEntryPoint;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-/**
- * Spring Security 설정 클래스.
- * 본 서버는 비브라우저 클라이언트(Admin 서버 등)가 호출하는 REST API 전용 서버이다.
- * 쿠키 기반 인증을 사용하지 않으므로 CSRF 보호가 불필요하다.
- * 운영 환경 전환 시 JWT 필터 추가, 역할 기반 접근 제어(RBAC) 설정이 필요하다.
- */
+import java.util.List;
+
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    /**
-     * HTTP 보안 필터 체인을 구성한다.
-     * - CSRF: 비활성화 — 비브라우저 REST API 서버이므로 쿠키 기반 CSRF 공격 벡터 없음
-     * - 세션: STATELESS — 서버 측 세션을 생성하지 않음
-     * - 인가: 모든 요청 허용 (개발 단계)
-     *
-     * @param http HttpSecurity 설정 빌더
-     * @return 구성된 SecurityFilterChain Bean
-     * @throws Exception 설정 처리 중 예외 발생 시
-     */
+    private final JwtTokenProvider jwtTokenProvider;
+    private final RestAccessDeniedHandler restAccessDeniedHandler;
+    private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
+        // CSRF 비활성화: 모든 인증은 Authorization 헤더(Bearer JWT)로 처리되므로 CSRF 공격 벡터 없음
+        http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+                    session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(exception ->
+                    exception.authenticationEntryPoint(restAuthenticationEntryPoint)
+                             .accessDeniedHandler(restAccessDeniedHandler))
+            .authorizeHttpRequests(auth ->
+                    auth.requestMatchers("/error").permitAll()
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",
+                                "/swagger-resources/**",
+                                "/webjars/**"
+                        ).permitAll()
+                        .anyRequest().authenticated())
+            .addFilterBefore(
+                    new JwtAuthenticationFilter(jwtTokenProvider),
+                    UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 }
