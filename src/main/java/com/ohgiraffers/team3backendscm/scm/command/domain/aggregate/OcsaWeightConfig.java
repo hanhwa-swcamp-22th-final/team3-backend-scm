@@ -16,8 +16,8 @@ import java.time.LocalDateTime;
 
 /**
  * OCSA(Operational Complexity & Skill Assessment) 난이도 산출에 사용하는 가중치 설정 엔티티.
- * 산업군 프리셋(IndustryPreset)별로 V1~V4 지표 가중치와 신규도(α) 가중치를 저장하며,
- * Order 엔티티의 config_id 로 참조된다.
+ * 산업군 프리셋(IndustryPreset)별로 V1~V4 지표 가중치와 신규성(α) 가중치를 저장하며,
+ * Order 엔티티의 config_id 에서 참조한다.
  * 적용 시작일(effectiveDate) 기준으로 여러 버전의 가중치를 관리할 수 있다.
  */
 @Entity
@@ -48,12 +48,12 @@ public class OcsaWeightConfig {
     private BigDecimal weightV4; // V4(공간·시간 긴급도) 가중치
 
     @Column(name = "alpha_weight")
-    private BigDecimal alphaWeight; // α(신규도 보정 계수) 가중치
+    private BigDecimal alphaWeight; // α(신규성 보정 계수) 가중치
 
     @Column(name = "effective_date")
-    private LocalDate effectiveDate; // 이 가중치 설정의 적용 시작일
+    private LocalDate effectiveDate; // 해당 가중치 설정의 적용 시작일
 
-    // ── JPA Auditing 자동 채워짐 ──
+    // 이하 JPA Auditing으로 자동 채워지는 필드들
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)

@@ -2,7 +2,7 @@ package com.ohgiraffers.team3backendscm.scm.command.domain.aggregate;
 
 /**
  * OCSA 가중치 설정에서 사용하는 산업군 프리셋 열거형.
- * 산업군마다 공정 복잡도·품질 정밀도 등의 중요도가 다르기 때문에,
+ * 산업군마다 공정 복잡도·품질 정밀도 등의 중요도가 다르기 때문에
  * 각 프리셋에 맞는 가중치 설정(OcsaWeightConfig)을 선택하여 난이도를 산출한다.
  */
 public enum IndustryPreset {

@@ -38,14 +38,15 @@ public class JwtTokenProvider {
         } catch (IllegalArgumentException e) {
             throw new BadCredentialsException("JWT Token claims empty", e);
         }
+        return false;
     }
 
     public Claims getClaimsFromJWT(String token) {
         return Jwts.parser()
-            .verifyWith(secretKey)
-            .build()
-            .parseSignedClaims(token)
-            .getPayload();
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     public Long getEmployeeIdFromJWT(String token) {

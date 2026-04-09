@@ -1,6 +1,6 @@
 package com.ohgiraffers.team3backendscm.scm.query.controller.tl;
 
-import com.ohgiraffers.team3backendscm.common.ApiResponse;
+import com.ohgiraffers.team3backendscm.common.dto.ApiResponse;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.TechnicianDto;
 import com.ohgiraffers.team3backendscm.scm.query.service.tl.TechnicianQueryService;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +30,7 @@ public class TechnicianQueryController {
 
     /**
      * 배정 가능한 전체 기술자 목록을 조회한다.
-     * 각 기술자의 이름, 역량 티어, OCSA 점수, 적합도를 포함한다.
+     * 각 기술자의 이름, 숙련도 티어, OCSA 점수, 적합도를 포함한다.
      *
      * @return 기술자 목록
      */

@@ -1,6 +1,5 @@
 package com.ohgiraffers.team3backendscm.config;
 
-
 import com.ohgiraffers.team3backendscm.jwt.JwtAuthenticationFilter;
 import com.ohgiraffers.team3backendscm.jwt.JwtTokenProvider;
 import com.ohgiraffers.team3backendscm.jwt.RestAccessDeniedHandler;
@@ -47,6 +46,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         // CSRF 비활성화: 모든 인증은 Authorization 헤더(Bearer JWT)로 처리되므로 CSRF 공격 벡터 없음
+        // lgtm[java/spring-disabled-csrf-protection]
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session ->

@@ -1,6 +1,6 @@
 package com.ohgiraffers.team3backendscm.scm.command.application.controller.admin;
 
-import com.ohgiraffers.team3backendscm.common.ApiResponse;
+import com.ohgiraffers.team3backendscm.common.dto.ApiResponse;
 import com.ohgiraffers.team3backendscm.scm.command.application.dto.request.ProductCreateRequest;
 import com.ohgiraffers.team3backendscm.scm.command.application.dto.request.ProductUpdateRequest;
 import com.ohgiraffers.team3backendscm.scm.command.application.service.admin.ProductCommandService;
@@ -11,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * Admin 모듈이 호출하는 제품(Product) 등록·수정·삭제 REST 컨트롤러.
+ * Admin 모듈???�출?�는 ?�품(Product) ?�록·?�정·??�� REST 컨트롤러.
  * 기본 경로: /api/v1/scm/admin/products
  */
 @RestController
@@ -22,10 +22,10 @@ public class ProductCommandController {
     private final ProductCommandService productCommandService;
 
     /**
-     * 제품을 등록한다.
+     * ?�품???�록?�다.
      *
-     * @param request 제품명·코드를 담은 요청 DTO
-     * @return 생성된 제품 ID
+     * @param request ?�품명·코?��? ?��? ?�청 DTO
+     * @return ?�성???�품 ID
      */
     @PostMapping
     public ResponseEntity<ApiResponse<Long>> createProduct(@Valid @RequestBody ProductCreateRequest request) {
@@ -34,11 +34,11 @@ public class ProductCommandController {
     }
 
     /**
-     * 제품 정보를 수정한다.
+     * ?�품 ?�보�??�정?�다.
      *
-     * @param productId 수정할 제품 ID
-     * @param request   변경할 제품명·코드를 담은 요청 DTO
-     * @return 성공 응답 (data = null)
+     * @param productId ?�정???�품 ID
+     * @param request   변경할 ?�품명·코?��? ?��? ?�청 DTO
+     * @return ?�공 ?�답 (data = null)
      */
     @PutMapping("/{productId}")
     public ResponseEntity<ApiResponse<Void>> updateProduct(
@@ -49,10 +49,10 @@ public class ProductCommandController {
     }
 
     /**
-     * 제품을 삭제한다.
+     * ?�품????��?�다.
      *
-     * @param productId 삭제할 제품 ID
-     * @return 성공 응답 (data = null)
+     * @param productId ??��???�품 ID
+     * @return ?�공 ?�답 (data = null)
      */
     @DeleteMapping("/{productId}")
     public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable Long productId) {

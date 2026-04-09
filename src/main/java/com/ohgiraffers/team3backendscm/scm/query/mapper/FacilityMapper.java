@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * 설비(Facility/Equipment) 조회 전용 MyBatis 매퍼 인터페이스.
  * 설비 목록, 이벤트 이력, 배치 인원, 요약 집계, 환경 트렌드 데이터 조회를 담당한다.
- * SQL은 src/main/resources/mappers/facilities.xml 에 정의된다.
+ * SQL은 src/main/resources/mapper/facilities.xml 에 정의한다.
  */
 @Mapper
 public interface FacilityMapper {
@@ -41,7 +41,7 @@ public interface FacilityMapper {
     List<FacilityDeploymentDto> findFacilityDeployments(Long facilityId);
 
     /**
-     * 전체 설비 상태별 집계 요약(가동 중, 중단, 점검, 폐기)을 조회한다.
+     * 전체 설비 상태별 집계 요약(가동, 중단, 점검, 폐기)을 조회한다.
      *
      * @return 설비 현황 요약 DTO
      */

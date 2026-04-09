@@ -11,7 +11,7 @@ import java.time.LocalDate;
 
 /**
  * 주문 상세 조회 시 반환되는 응답 DTO.
- * 목록 DTO(OrderReadDto) 대비 주문 수량, OCSA 난이도 점수·등급 등
+ * 목록 DTO(OrderReadDto) 보다 주문 수량, OCSA 난이도 점수·등급 등
  * 상세 화면에서 필요한 추가 정보를 포함한다.
  */
 @Getter
@@ -21,7 +21,7 @@ public class OrderDetailDto {
 
     private Long orderId;              // 주문 PK
     private String orderNumber;        // 주문 번호
-    private String itemName;           // 제품(품목) 명칭
+    private String itemName;           // 상품(품목) 명칭
     private OrderStatus status;        // 주문 처리 상태
     private LocalDate dueDate;         // 납기 마감일
     private Integer orderQuantity;     // 주문 수량
@@ -29,3 +29,4 @@ public class OrderDetailDto {
     private BigDecimal difficultyScore; // OCSA 산출 난이도 점수
     private DifficultyGrade difficultyGrade; // 난이도 등급 (D1~D5)
 }
+
