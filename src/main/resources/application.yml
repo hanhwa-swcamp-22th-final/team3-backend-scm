@@ -30,3 +30,6 @@ mybatis:
   type-aliases-package: com.ohgiraffers.team3backendscm
   configuration:
     map-underscore-to-camel-case: true
+
+admin:
+  url: ${ADMIN_URL:http://localhost:8080}

@@ -1,5 +1,8 @@
 package com.ohgiraffers.team3backendscm.scm.query.service.tl;
 
+import com.ohgiraffers.team3backendscm.infrastructure.client.AdminClient;
+import com.ohgiraffers.team3backendscm.infrastructure.client.dto.EnvironmentEventResponse;
+import com.ohgiraffers.team3backendscm.infrastructure.client.dto.EquipmentSummaryResponse;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.FacilityDeploymentDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.FacilityDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.FacilityHistoryDto;
@@ -13,13 +16,15 @@ import java.util.List;
 
 /**
  * 팀 리더(TL) 권한의 설비 조회 Query 서비스.
- * FacilityMapper를 통해 설비 목록, 이력, 배치 인원, 요약, 트렌드 데이터를 읽기 전용으로 제공한다.
+ * 설비 목록·이력·배치 인원은 SCM DB(FacilityMapper)에서 조회하고,
+ * 설비 요약·환경 트렌드는 Admin Feign Client를 통해 조회한다.
  */
 @Service
 @RequiredArgsConstructor
 public class FacilityQueryService {
 
     private final FacilityMapper facilityMapper;
+    private final AdminClient adminClient;
 
     /**
      * 전체 설비 목록을 조회한다.
@@ -52,20 +57,40 @@ public class FacilityQueryService {
 
     /**
      * 전체 설비 운영 요약을 조회한다.
+     * Admin의 GET /api/v1/equipment-management/equipments?mode=summary 를 호출한다.
      *
      * @return 설비 운영 요약 DTO
      */
     public FacilitySummaryDto getFacilitySummary() {
-        return facilityMapper.findFacilitySummary();
+        EquipmentSummaryResponse res = adminClient.getEquipmentSummary("summary").getData();
+        return new FacilitySummaryDto(
+                (int) res.getTotalCount(),
+                (int) res.getOperatingCount(),
+                (int) res.getStoppedCount(),
+                (int) res.getUnderInspectionCount(),
+                (int) res.getDisposedCount()
+        );
     }
 
     /**
      * 특정 설비의 환경 이상 트렌드 정보를 조회한다.
+     * Admin의 GET /api/v1/equipment-management/environment-events?mode=history&equipmentId={id} 를 호출한다.
      *
      * @param facilityId 조회할 설비 ID
      * @return 환경 이상 트렌드 목록
      */
     public List<FacilityTrendsDto> getFacilityTrends(Long facilityId) {
-        return facilityMapper.findFacilityTrends(facilityId);
+        List<EnvironmentEventResponse> events =
+                adminClient.getEnvironmentEvents("history", facilityId).getData();
+        return events.stream()
+                .map(e -> new FacilityTrendsDto(
+                        e.getEquipmentId(),
+                        e.getEnvDetectedAt(),
+                        e.getEnvTemperature(),
+                        e.getEnvHumidity(),
+                        e.getEnvParticleCnt(),
+                        e.getEnvDeviationType()
+                ))
+                .toList();
     }
 }

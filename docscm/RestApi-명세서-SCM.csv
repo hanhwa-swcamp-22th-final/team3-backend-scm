@@ -19,8 +19,8 @@ SCM-017,Assignment,Assignment,Delete,배정 취소,배정 취소,DELETE,/api/v1/
 SCM-018,Technician,Technician,List,기술자 OCSA 점수 및 적합도 조회,기술자 OCSA 점수 및 적합도 조회,GET,/api/v1/scm/technicians,TL,-,기술자 목록 및 OCSA 점수 정보,✅ 구현완료
 SCM-019,Facility,Facility,List,설비 목록 조회,설비 목록 조회 (상태·카테고리·담당자 포함),GET,/api/v1/scm/facilities,TL,-,설비 목록,✅ 구현완료
 SCM-020,Facility,History,List,설비 이벤트·정비 이력 조회,설비 이벤트·정비 이력 조회,GET,/api/v1/scm/facilities/{facilityId}/history,TL,facilityId (Path),설비 이벤트 이력 목록,✅ 구현완료
-SCM-021,Facility,Summary,Dashboard,설비 상태 요약 조회,설비 상태 요약 조회 (RUN·WARN·FAULT·IDLE 집계),GET,/api/v1/scm/facilities/summary,TL,-,"상태별 설비 카운트 (total, operating, stopped 등)",⚠️ Admin DB 직접 접근 (전환 필요)
-SCM-022,Facility,Trends,Detail,설비 E_idx 시계열 추이 조회,설비 E_idx 시계열 추이 조회,GET,/api/v1/scm/facilities/{facilityId}/trends,TL,facilityId (Path),설비 환경 추이 시계열 목록,⚠️ Admin DB 직접 접근 (전환 필요)
+SCM-021,Facility,Summary,Dashboard,설비 상태 요약 조회,설비 상태 요약 조회 (RUN·WARN·FAULT·IDLE 집계),GET,/api/v1/scm/facilities/summary,TL,-,"상태별 설비 카운트 (total, operating, stopped 등)",✅ 구현완료
+SCM-022,Facility,Trends,Detail,설비 E_idx 시계열 추이 조회,설비 E_idx 시계열 추이 조회,GET,/api/v1/scm/facilities/{facilityId}/trends,TL,facilityId (Path),설비 환경 추이 시계열 목록,✅ 구현완료
 SCM-023,Facility,Deployment,List,설비 배치 기술자 조회,설비 배치 기술자 조회,GET,/api/v1/scm/facilities/{facilityId}/deployments,TL,facilityId (Path),해당 설비 배치 기술자 목록,✅ 구현완료
 SCM-024,Task,Execution,List,미완료 작업 목록 조회,미완료 작업 목록 조회 (REJECT·COMPLETE 제외),GET,/api/v1/scm/tasks,Worker,employeeId (Query),작업 목록,✅ 구현완료
 SCM-025,Task,Summary,Dashboard,작업 현황 집계 조회,작업 현황 집계 조회 (배정완료·진행중·완료 상태별 카운트),GET,/api/v1/scm/tasks/summary,Worker,employeeId (Query),"assignedCount, inProgressCount, completedCount",✅ 구현완료
