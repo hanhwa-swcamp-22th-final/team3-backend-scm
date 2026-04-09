@@ -1,0 +1,37 @@
+API ID,1 DEPTH,2 DEPTH,3 DEPTH,API 명칭,설명,Method,URL,Actor,요청 필드,응답 필드,구현 여부
+SCM-001,Order,Order,List,주문 목록 조회,주문 목록 조회 (status·difficultyGrade·keyword 필터),GET,/api/v1/scm/orders,TL/DL,"status, difficultyGrade, keyword, page, size","주문 목록 (orderNo, productName, status, dueDate, difficultyGrade 등)",✅ 구현완료
+SCM-002,Order,Order,Detail,주문 상세 조회,주문 상세 조회,GET,/api/v1/scm/orders/{orderId},TL/DL,orderId (Path),"주문 상세 정보 (orderId, orderNo, status, dueDate, quantity, difficultyGrade 등)",✅ 구현완료
+SCM-003,Order,Summary,Dashboard,주문 요약 조회,주문 요약 조회 (전체·진행중·납기위험·달성률 + 칸반 컬럼별 카운트),GET,/api/v1/scm/orders/summary,TL/DL,-,"요약 정보 (totalCount, inProgressCount, deadlineRiskCount, achievementRate, registeredCount, analyzedCount, completedCount)",✅ 구현완료
+SCM-004,Order,Urgent,List,긴급 주문 목록 조회,긴급 주문 목록 조회 (납기 3일 이내·미배정 포함),GET,/api/v1/scm/orders/urgent,TL/DL,-,긴급 주문 목록,✅ 구현완료
+SCM-005,Order,Unassigned,List,미배정 주문 목록 조회,미배정 주문 목록 조회 (ANALYZED 상태),GET,/api/v1/scm/orders/unassigned,TL/DL,-,미배정 주문 목록,✅ 구현완료
+SCM-006,Order,OCSA,Detail,주문 OCSA 분석 조회,주문 OCSA 분석 조회 (V1~V4 지표·점수·등급·추천 기술자),GET,/api/v1/scm/orders/{orderId}/ocsa,TL,orderId (Path),"OCSA 지표, 점수, 난이도 등급, 추천 기술자 ID",✅ 구현완료
+SCM-007,Order,OCSA Summary,Dashboard,OCSA 분석 현황 요약 조회,OCSA 분석 현황 요약 조회 (ANALYZED·INPROGRESS 대상),GET,/api/v1/scm/orders/ocsa/summary,TL,-,"analyzedOrderCount, avgDifficultyScore, maxDifficultyGrade",✅ 구현완료
+SCM-008,Line,Summary,Dashboard,라인별 요약 조회,라인별 달성률·주문 건수 요약 조회,GET,/api/v1/scm/lines/summary,TL,-,라인별 요약 목록,⚠️ Admin DB 직접 접근 (전환 필요)
+SCM-009,Line,Status,Detail,라인 실시간 현황 조회,라인 실시간 현황 조회 (가동률·배정 기술자·진행 주문),GET,/api/v1/scm/lines/{lineId}/status,TL,lineId (Path),라인 실시간 운영 현황,⚠️ Admin DB 직접 접근 (전환 필요)
+SCM-010,Assignment,Candidate,List,배정 후보 기술자 조회,배정 후보 기술자 조회 (티어·점수·적합도),GET,/api/v1/scm/assignments/candidates,TL,-,배정 후보 기술자 목록,✅ 구현완료
+SCM-011,Assignment,Summary,Dashboard,배정 현황 집계 조회,배정 현황 집계 조회 (금일 배정·미배정 주문 수·배정 정확도·실시간 작업 인원),GET,/api/v1/scm/assignments/summary,TL,-,"todayAssignedCount, unassignedCount, accuracy, activeWorkerCount",✅ 구현완료
+SCM-012,Assignment,Timeline,List,라인별 배정 타임라인 조회,라인별 배정 타임라인 조회,GET,/api/v1/scm/assignments/timeline,TL,-,라인별 배정 타임라인 목록,⚠️ Admin DB 직접 접근 (전환 필요)
+SCM-013,Assignment,Rebalance,List,재배치 권고 현황 조회,재배치 권고 현황 조회 (라인별 티어 분포·권고 인원),GET,/api/v1/scm/assignments/rebalance,TL,-,재배치 권고 현황 목록,⚠️ Admin DB 직접 접근 (전환 필요)
+SCM-014,Assignment,Assignment,Create,작업 배정 확정,작업 배정 확정 (matching_status → CONFIRM),POST,/api/v1/scm/assignments,TL,"orderId, technicianId",-,✅ 구현완료
+SCM-015,Assignment,Assignment,Detail,배정 상세 조회,배정 상세 조회 (배정 기술자·주문·라인 정보),GET,/api/v1/scm/assignments/{matchingRecordId},TL,matchingRecordId (Path),배정 상세 정보,✅ 구현완료
+SCM-016,Assignment,Assignment,Update,배정 기술자 변경,배정 기술자·라인 변경 (재배정),PUT,/api/v1/scm/assignments/{matchingRecordId},TL,"matchingRecordId (Path), technicianId",-,✅ 구현완료
+SCM-017,Assignment,Assignment,Delete,배정 취소,배정 취소,DELETE,/api/v1/scm/assignments/{matchingRecordId},TL,matchingRecordId (Path),-,✅ 구현완료
+SCM-018,Technician,Technician,List,기술자 OCSA 점수 및 적합도 조회,기술자 OCSA 점수 및 적합도 조회,GET,/api/v1/scm/technicians,TL,-,기술자 목록 및 OCSA 점수 정보,✅ 구현완료
+SCM-019,Facility,Facility,List,설비 목록 조회,설비 목록 조회 (상태·카테고리·담당자 포함),GET,/api/v1/scm/facilities,TL,-,설비 목록,✅ 구현완료
+SCM-020,Facility,History,List,설비 이벤트·정비 이력 조회,설비 이벤트·정비 이력 조회,GET,/api/v1/scm/facilities/{facilityId}/history,TL,facilityId (Path),설비 이벤트 이력 목록,✅ 구현완료
+SCM-021,Facility,Summary,Dashboard,설비 상태 요약 조회,설비 상태 요약 조회 (RUN·WARN·FAULT·IDLE 집계),GET,/api/v1/scm/facilities/summary,TL,-,"상태별 설비 카운트 (total, operating, stopped 등)",⚠️ Admin DB 직접 접근 (전환 필요)
+SCM-022,Facility,Trends,Detail,설비 E_idx 시계열 추이 조회,설비 E_idx 시계열 추이 조회,GET,/api/v1/scm/facilities/{facilityId}/trends,TL,facilityId (Path),설비 환경 추이 시계열 목록,⚠️ Admin DB 직접 접근 (전환 필요)
+SCM-023,Facility,Deployment,List,설비 배치 기술자 조회,설비 배치 기술자 조회,GET,/api/v1/scm/facilities/{facilityId}/deployments,TL,facilityId (Path),해당 설비 배치 기술자 목록,✅ 구현완료
+SCM-024,Task,Execution,List,미완료 작업 목록 조회,미완료 작업 목록 조회 (REJECT·COMPLETE 제외),GET,/api/v1/scm/tasks,Worker,employeeId (Query),작업 목록,✅ 구현완료
+SCM-025,Task,Summary,Dashboard,작업 현황 집계 조회,작업 현황 집계 조회 (배정완료·진행중·완료 상태별 카운트),GET,/api/v1/scm/tasks/summary,Worker,employeeId (Query),"assignedCount, inProgressCount, completedCount",✅ 구현완료
+SCM-026,Task,Execution,Update,작업 시작 처리,작업 시작 처리,POST,/api/v1/scm/workers/me/today-tasks/{taskId}/start,Worker,taskId (Path),-,✅ 구현완료
+SCM-027,Task,Execution,Update,작업 종료 임시 저장,작업 종료 임시 저장,POST,/api/v1/scm/workers/me/today-tasks/{taskId}/finish-draft,Worker,"taskId (Path), comment",-,✅ 구현완료
+SCM-028,Task,Execution,Update,작업 종료 제출,작업 종료 제출,POST,/api/v1/scm/workers/me/today-tasks/{taskId}/finish,Worker,"taskId (Path), comment",-,✅ 구현완료
+SCM-029,Worker,My Deployment,List,내 작업 배치 현황 조회,내 작업 배치 현황 조회,GET,/api/v1/scm/workers/me/deployments,Worker,employeeId (Query),배치 현황 이력 목록,✅ 구현완료
+SCM-030,Worker,My Matching History,List,내 매칭 이력 조회,내 매칭 이력 조회,GET,/api/v1/scm/workers/me/matching-history,Worker,employeeId (Query),매칭 이력 목록,✅ 구현완료
+SCM-031,Product,Product,Create,제품 등록,제품 등록 (Admin 호출 — SCM이 제공하는 내부 API),POST,/api/v1/scm/admin/products,Admin,"productName, productCode",생성된 productId,✅ 구현완료
+SCM-032,Product,Product,Update,제품 정보 수정,제품 정보 수정 (Admin 호출),PUT,/api/v1/scm/admin/products/{productId},Admin,"productId (Path), productName, productCode",-,✅ 구현완료
+SCM-033,Product,Product,Delete,제품 삭제,제품 삭제 (Admin 호출),DELETE,/api/v1/scm/admin/products/{productId},Admin,productId (Path),-,✅ 구현완료
+SCM-034,Order,Order,Create,주문 등록,주문 등록 (Admin 호출 — REGISTERED 상태로 생성),POST,/api/v1/scm/admin/orders,Admin,"productId, configId, orderNumber, orderQuantity, dueDate, isFirstOrder",생성된 orderId,✅ 구현완료
+SCM-035,Order,Order,Update,주문 기본 정보 수정,주문 기본 정보 수정 (Admin 호출 — REGISTERED 상태만 허용),PUT,/api/v1/scm/admin/orders/{orderId},Admin,"orderId (Path), productId, orderNumber, orderQuantity, dueDate",-,✅ 구현완료
+SCM-036,Order,Order,Delete,주문 삭제,주문 삭제 (Admin 호출 — REGISTERED 상태만 허용),DELETE,/api/v1/scm/admin/orders/{orderId},Admin,orderId (Path),-,✅ 구현완료
