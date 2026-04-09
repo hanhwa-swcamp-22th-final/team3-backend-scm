@@ -2,6 +2,7 @@ package com.ohgiraffers.team3backendscm.scm.command.domain.repository;
 
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingRecord;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingStatus;
+import com.ohgiraffers.team3backendscm.scm.command.infrastructure.repository.JpaMatchingRecordRepository;
 
 import java.util.List;
 import java.util.Optional;
@@ -9,7 +10,7 @@ import java.util.Optional;
 /**
  * 배정 매칭 기록(MatchingRecord) 도메인 레포지토리 인터페이스.
  */
-public interface MatchingRecordRepository {
+public interface MatchingRecordRepository extends JpaMatchingRecordRepository {
 
     /**
      * 배정 기록 저장 또는 수정.

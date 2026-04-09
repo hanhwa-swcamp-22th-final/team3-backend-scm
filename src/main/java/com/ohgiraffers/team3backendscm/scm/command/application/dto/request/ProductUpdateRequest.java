@@ -5,17 +5,17 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * Admin??SCM???�품 ?�보�??�정?????�용?�는 ?�청 DTO.
+ * Admin SCM 에서 상품 수정 시 사용하는 요청 DTO이다.
  */
 @Getter
 @NoArgsConstructor
 public class ProductUpdateRequest {
 
-    @NotBlank(message = "?�품명�? ?�수?�니??")
-    private String productName; // 변경할 ?�품 명칭
+    @NotBlank(message = "상품명은 필수입니다.")
+    private String productName;
 
-    @NotBlank(message = "?�품 코드???�수?�니??")
-    private String productCode; // 변경할 ?�품 고유 코드
+    @NotBlank(message = "상품 코드는 필수입니다.")
+    private String productCode;
 
     public ProductUpdateRequest(String productName, String productCode) {
         this.productName = productName;

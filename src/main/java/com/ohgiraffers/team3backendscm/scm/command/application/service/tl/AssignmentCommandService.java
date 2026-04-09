@@ -9,6 +9,7 @@ import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.Order;
 import com.ohgiraffers.team3backendscm.scm.command.domain.repository.MatchingRecordRepository;
 import com.ohgiraffers.team3backendscm.scm.command.domain.repository.OrderRepository;
 import com.ohgiraffers.team3backendscm.scm.query.mapper.EmployeeMapper;
+import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,7 +37,8 @@ public class AssignmentCommandService {
     private final OrderRepository orderRepository;
     private final MatchingRecordRepository matchingRecordRepository;
     private final IdGenerator idGenerator;
-    private final EmployeeMapper employeeMapper; // HR 도메인 employee 테이블 조회용
+    private final EmployeeMapper employeeMapper;
+    private final AssignmentSnapshotCommandService assignmentSnapshotCommandService;
 
     /**
      * 기술자를 주문에 배정한다. 트랜잭션 내에서 주문 상태 변경과 배정 기록 저장이 원자적으로 처리된다.
@@ -48,7 +50,7 @@ public class AssignmentCommandService {
     @Transactional
     public void assign(AssignRequest request) {
         Order order = orderRepository.findById(request.getOrderId())
-                .orElseThrow(() -> new NoSuchElementException("주문을 찾을 수 없습니다. id=" + request.getOrderId()));
+            .orElseThrow(() -> new NoSuchElementException("Order not found. id=" + request.getOrderId()));
 
         // 기술자의 숙련도 티어 조회 (employee 및 HR 정보 또는 EmployeeMapper)
         String employeeTier = employeeMapper.findTierById(request.getTechnicianId());
@@ -60,10 +62,10 @@ public class AssignmentCommandService {
         order.assignTechnician(request.getTechnicianId());
         orderRepository.save(order);
 
-        // 배정 확정 기록 저장
         Long recordId = idGenerator.generate();
         MatchingRecord record = new MatchingRecord(recordId, order.getOrderId(), request.getTechnicianId(), matchingMode);
         matchingRecordRepository.save(record);
+        assignmentSnapshotCommandService.publishSnapshotAfterCommit(recordId);
     }
 
     /**
@@ -77,16 +79,17 @@ public class AssignmentCommandService {
     @Transactional
     public void reassign(Long matchingRecordId, ReassignRequest request) {
         MatchingRecord record = matchingRecordRepository.findById(matchingRecordId)
-                .orElseThrow(() -> new NoSuchElementException("배정 기록을 찾을 수 없습니다. id=" + matchingRecordId));
+            .orElseThrow(() -> new NoSuchElementException("Assignment record not found. id=" + matchingRecordId));
 
         Order order = orderRepository.findById(record.getOrderId())
-                .orElseThrow(() -> new NoSuchElementException("주문을 찾을 수 없습니다. id=" + record.getOrderId()));
+            .orElseThrow(() -> new NoSuchElementException("Order not found. id=" + record.getOrderId()));
 
         String employeeTier = employeeMapper.findTierById(request.getTechnicianId());
-
         MatchingMode newMatchingMode = MatchingMode.determine(order.getDifficultyGrade(), employeeTier);
+
         record.reassign(request.getTechnicianId(), newMatchingMode);
         matchingRecordRepository.save(record);
+        assignmentSnapshotCommandService.publishSnapshotAfterCommit(record.getMatchingRecordId());
     }
 
     /**
@@ -100,13 +103,14 @@ public class AssignmentCommandService {
     @Transactional
     public void cancel(Long matchingRecordId) {
         MatchingRecord record = matchingRecordRepository.findById(matchingRecordId)
-                .orElseThrow(() -> new NoSuchElementException("배정 기록을 찾을 수 없습니다. id=" + matchingRecordId));
+            .orElseThrow(() -> new NoSuchElementException("Assignment record not found. id=" + matchingRecordId));
 
         Order order = orderRepository.findById(record.getOrderId())
-                .orElseThrow(() -> new NoSuchElementException("주문을 찾을 수 없습니다. id=" + record.getOrderId()));
+            .orElseThrow(() -> new NoSuchElementException("Order not found. id=" + record.getOrderId()));
 
         record.cancel();
         matchingRecordRepository.save(record);
+        assignmentSnapshotCommandService.publishSnapshotAfterCommit(record.getMatchingRecordId());
 
         order.cancelAssignment();
         orderRepository.save(order);

@@ -1,46 +1,69 @@
 package com.ohgiraffers.team3backendscm.scm.command.application.dto.request;
 
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-
-/**
- * Admin??SCM??ì£¼ë¬¸???±ë¡?????¬ìš©?˜ëŠ” ?”ì²­ DTO.
- * ?±ë¡??ì£¼ë¬¸?€ REGISTERED ?íƒœë¡??œì‘?˜ë©°, OCSA ë¶„ì„ ??SCM ?Œí¬?Œë¡œ?°ê? ì§„í–‰?œë‹¤.
- */
 @Getter
 @NoArgsConstructor
 public class OrderCreateRequest {
 
-    @NotNull(message = "?œí’ˆ ID???„ìˆ˜?…ë‹ˆ??")
-    private Long productId; // ì£¼ë¬¸ ?€???œí’ˆ ID
+    @NotNull(message = "Product id is required.")
+    private Long productId;
 
-    @NotNull(message = "OCSA ?¤ì • ID???„ìˆ˜?…ë‹ˆ??")
-    private Long configId; // OCSA ê°€ì¤‘ì¹˜ ?¤ì • ID
+    @NotNull(message = "OCSA config id is required.")
+    private Long configId;
 
-    @NotBlank(message = "ì£¼ë¬¸ ë²ˆí˜¸???„ìˆ˜?…ë‹ˆ??")
-    private String orderNumber; // ?¬ëŒ???½ì„ ???ˆëŠ” ì£¼ë¬¸ ë²ˆí˜¸ (?? ORD-20240101-001)
+    @NotBlank(message = "Order number is required.")
+    private String orderNumber;
 
-    @NotNull(message = "ì£¼ë¬¸ ?˜ëŸ‰?€ ?„ìˆ˜?…ë‹ˆ??")
-    @Min(value = 1, message = "ì£¼ë¬¸ ?˜ëŸ‰?€ 1 ?´ìƒ?´ì–´???©ë‹ˆ??")
-    private Integer orderQuantity; // ì£¼ë¬¸ ?˜ëŸ‰
+    @NotNull(message = "Order quantity is required.")
+    @Min(value = 1, message = "Order quantity must be at least 1.")
+    private Integer orderQuantity;
 
-    @NotNull(message = "?©ê¸° ë§ˆê°?¼ì? ?„ìˆ˜?…ë‹ˆ??")
-    private LocalDate dueDate; // ?©ê¸° ë§ˆê°??
+    @NotNull(message = "Due date is required.")
+    private LocalDate dueDate;
 
-    private Boolean isFirstOrder = false; // ?´ë‹¹ ?œí’ˆ??ìµœì´ˆ ì£¼ë¬¸ ?¬ë? (ê¸°ë³¸ê°? false)
+    private Boolean isFirstOrder = false;
+
+    @NotNull(message = "Process step count is required.")
+    @Min(value = 1, message = "Process step count must be at least 1.")
+    @Max(value = 50, message = "Process step count must be 50 or less.")
+    private Integer processStepCount;
+
+    @NotNull(message = "Tolerance is required.")
+    @DecimalMin(value = "0.0001", message = "Tolerance must be greater than 0.")
+    @Digits(integer = 4, fraction = 4, message = "Tolerance supports up to 4 integer digits and 4 decimal digits.")
+    private BigDecimal toleranceMm;
+
+    @NotNull(message = "Skill level is required.")
+    @Min(value = 1, message = "Skill level must be at least 1.")
+    @Max(value = 5, message = "Skill level must be 5 or less.")
+    private Integer skillLevel;
 
     public OrderCreateRequest(Long productId, Long configId, String orderNumber,
                               Integer orderQuantity, LocalDate dueDate, Boolean isFirstOrder) {
+        this(productId, configId, orderNumber, orderQuantity, dueDate, 1, new BigDecimal("0.1000"), 1, isFirstOrder);
+    }
+
+    public OrderCreateRequest(Long productId, Long configId, String orderNumber,
+                              Integer orderQuantity, LocalDate dueDate, Integer processStepCount,
+                              BigDecimal toleranceMm, Integer skillLevel, Boolean isFirstOrder) {
         this.productId = productId;
         this.configId = configId;
         this.orderNumber = orderNumber;
         this.orderQuantity = orderQuantity;
         this.dueDate = dueDate;
+        this.processStepCount = processStepCount;
+        this.toleranceMm = toleranceMm;
+        this.skillLevel = skillLevel;
         this.isFirstOrder = isFirstOrder;
     }
 }

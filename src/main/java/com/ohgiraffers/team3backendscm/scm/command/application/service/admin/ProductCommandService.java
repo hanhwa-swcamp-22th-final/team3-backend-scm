@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.NoSuchElementException;
 
 /**
- * Admin???�출?�는 ?�품(Product) ?�록·?�정·??�� Command ?�비??
+ * Admin 모듈에서 호출하는 상품 등록, 수정, 삭제용 Command 서비스이다.
  */
 @Service
 @RequiredArgsConstructor
@@ -23,10 +23,10 @@ public class ProductCommandService {
     private final IdGenerator idGenerator;
 
     /**
-     * ?�품???�록?�다.
+     * 상품을 등록한다.
      *
-     * @param request ?�품명·코?��? ?��? ?�청 DTO
-     * @return ?�성???�품 ID
+     * @param request 상품 등록 요청 DTO
+     * @return 생성된 상품 ID
      */
     @Transactional
     public Long create(ProductCreateRequest request) {
@@ -37,11 +37,11 @@ public class ProductCommandService {
     }
 
     /**
-     * ?�품 ?�보�??�정?�다.
+     * 상품 정보를 수정한다.
      *
-     * @param productId ?�정???�품 ID
-     * @param request   변경할 ?�품명·코?��? ?��? ?�청 DTO
-     * @throws NoSuchElementException ?�품??찾을 ???�을 경우
+     * @param productId 수정할 상품 ID
+     * @param request 상품 수정 요청 DTO
+     * @throws NoSuchElementException 상품을 찾을 수 없는 경우
      */
     @Transactional
     public void update(Long productId, ProductUpdateRequest request) {
@@ -52,10 +52,10 @@ public class ProductCommandService {
     }
 
     /**
-     * ?�품????��?�다.
+     * 상품을 삭제한다.
      *
-     * @param productId ??��???�품 ID
-     * @throws NoSuchElementException ?�품??찾을 ???�을 경우
+     * @param productId 삭제할 상품 ID
+     * @throws NoSuchElementException 상품을 찾을 수 없는 경우
      */
     @Transactional
     public void delete(Long productId) {

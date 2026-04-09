@@ -38,7 +38,6 @@ public class JwtTokenProvider {
         } catch (IllegalArgumentException e) {
             throw new BadCredentialsException("JWT Token claims empty", e);
         }
-        return false;
     }
 
     public Claims getClaimsFromJWT(String token) {

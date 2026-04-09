@@ -5,16 +5,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * ?�업 종료(?�시?�???�출) ?�청 DTO.
- * POST /api/v1/scm/workers/me/today-tasks/{taskId}/finish-draft
- * POST /api/v1/scm/workers/me/today-tasks/{taskId}/finish
- * ???�드?�인?�에??공통?�로 ?�용?�다.
+ * 작업 종료 관련 요청 DTO이다.
+ * POST /api/v1/scm/workers/me/today-tasks/{taskId}/finish-draft 와
+ * POST /api/v1/scm/workers/me/today-tasks/{taskId}/finish 에서 공통으로 사용한다.
  */
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class TaskFinishRequest {
 
-    /** ?�업 ?�료 코멘??(?�택 ?�력) */
+    /** 작업 종료 코멘트 */
     private String comment;
 }
