@@ -1,6 +1,6 @@
 package com.ohgiraffers.team3backendscm.common.exception;
 
-import com.ohgiraffers.team3backendscm.common.ApiResponse;
+import com.ohgiraffers.team3backendscm.common.dto.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -14,35 +14,41 @@ import java.util.NoSuchElementException;
 @Slf4j
 public class GlobalExceptionHandler {
 
-    /** 명시적 비즈니스 예외 — ErrorCode 기반 상태 코드로 응답 */
+    /* 비즈니스 예외 처리: ErrorCode 기반 상태 코드와 메시지 반환 */
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException e) {
         ErrorCode errorCode = e.getErrorCode();
         log.error("Business exception: {}", e.getMessage());
 
-        return ResponseEntity.status(errorCode.getStatus())
-                .body(ApiResponse.failure(errorCode.getCode(), e.getMessage()));
+        ApiResponse<Void> response = ApiResponse.failure(errorCode.getCode(), e.getMessage());
+        return ResponseEntity.status(errorCode.getStatus()).body(response);
     }
 
-    /** 리소스 미존재 — 현재 서비스 코드가 NoSuchElementException 을 던지므로 404 로 처리 */
+    /* NoSuchElementException 예외 처리: 404 Not Found 처리 */
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<ApiResponse<Void>> handleNoSuchElementException(NoSuchElementException e) {
         log.error("Resource not found: {}", e.getMessage());
 
-        return ResponseEntity.status(ErrorCode.ORDER_NOT_FOUND.getStatus())
-                .body(ApiResponse.failure(ErrorCode.ORDER_NOT_FOUND.getCode(), e.getMessage()));
+        ApiResponse<Void> response = ApiResponse.failure(
+            ErrorCode.ORDER_NOT_FOUND.getCode(),
+            e.getMessage()
+        );
+        return ResponseEntity.status(ErrorCode.ORDER_NOT_FOUND.getStatus()).body(response);
     }
 
-    /** 도메인 규칙 위반 — 상태 전이 불가 등 IllegalStateException 을 400 으로 처리 */
+    /* IllegalStateException 예외 처리: 400 Bad Request 처리 */
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ApiResponse<Void>> handleIllegalStateException(IllegalStateException e) {
         log.error("Domain rule violation: {}", e.getMessage());
 
-        return ResponseEntity.status(ErrorCode.INVALID_ORDER_STATUS.getStatus())
-                .body(ApiResponse.failure(ErrorCode.INVALID_ORDER_STATUS.getCode(), e.getMessage()));
+        ApiResponse<Void> response = ApiResponse.failure(
+            ErrorCode.INVALID_ORDER_STATUS.getCode(),
+            e.getMessage()
+        );
+        return ResponseEntity.status(ErrorCode.INVALID_ORDER_STATUS.getStatus()).body(response);
     }
 
-    /** 요청 바디 바인딩 실패 (@Valid 검증) */
+    /* 요청 바디 바인딩 실패 (@Valid 검증 오류) */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidationException(MethodArgumentNotValidException e) {
         log.error("Validation exception: {}", e.getMessage());
@@ -52,25 +58,31 @@ public class GlobalExceptionHandler {
                 .map(fe -> fe.getDefaultMessage())
                 .orElse(ErrorCode.INVALID_INPUT.getMessage());
 
-        return ResponseEntity.status(ErrorCode.INVALID_INPUT.getStatus())
-                .body(ApiResponse.failure(ErrorCode.INVALID_INPUT.getCode(), message));
+        ApiResponse<Void> response = ApiResponse.failure(ErrorCode.INVALID_INPUT.getCode(), message);
+        return ResponseEntity.status(ErrorCode.INVALID_INPUT.getStatus()).body(response);
     }
 
-    /** JSON 파싱 실패 */
+    /* JSON 파싱 실패 */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiResponse<Void>> handleMessageNotReadableException(HttpMessageNotReadableException e) {
         log.error("Message not readable: {}", e.getMessage());
 
-        return ResponseEntity.status(ErrorCode.INVALID_INPUT.getStatus())
-                .body(ApiResponse.failure(ErrorCode.INVALID_INPUT.getCode(), ErrorCode.INVALID_INPUT.getMessage()));
+        ApiResponse<Void> response = ApiResponse.failure(
+            ErrorCode.INVALID_INPUT.getCode(),
+            ErrorCode.INVALID_INPUT.getMessage()
+        );
+        return ResponseEntity.status(ErrorCode.INVALID_INPUT.getStatus()).body(response);
     }
 
-    /** 그 외 모든 예외 — 500 */
+    /* 기타 모든 예외 처리: 500 Internal Server Error */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
         log.error("Unhandled exception", e);
 
-        return ResponseEntity.status(ErrorCode.INTERNAL_SERVER_ERROR.getStatus())
-                .body(ApiResponse.failure(ErrorCode.INTERNAL_SERVER_ERROR.getCode(), ErrorCode.INTERNAL_SERVER_ERROR.getMessage()));
+        ApiResponse<Void> response = ApiResponse.failure(
+            ErrorCode.INTERNAL_SERVER_ERROR.getCode(),
+            ErrorCode.INTERNAL_SERVER_ERROR.getMessage()
+        );
+        return ResponseEntity.status(ErrorCode.INTERNAL_SERVER_ERROR.getStatus()).body(response);
     }
 }

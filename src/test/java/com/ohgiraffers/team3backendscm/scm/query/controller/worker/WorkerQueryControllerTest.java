@@ -5,8 +5,12 @@ import com.ohgiraffers.team3backendscm.scm.query.dto.response.WorkerTaskSummaryD
 import com.ohgiraffers.team3backendscm.scm.query.service.worker.WorkerQueryService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import com.ohgiraffers.team3backendscm.jwt.JwtTokenProvider;
+import com.ohgiraffers.team3backendscm.jwt.RestAccessDeniedHandler;
+import com.ohgiraffers.team3backendscm.jwt.RestAuthenticationEntryPoint;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -26,8 +30,11 @@ class WorkerQueryControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
-    private WorkerQueryService workerQueryService;
+    @MockBean private WorkerQueryService workerQueryService;
+    @MockBean private JwtTokenProvider jwtTokenProvider;
+    @MockBean private UserDetailsService userDetailsService;
+    @MockBean private RestAccessDeniedHandler restAccessDeniedHandler;
+    @MockBean private RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
     @Test
     @DisplayName("GET /api/v1/scm/tasks?employeeId=10 → 200 OK + 미완료 작업 목록 반환")

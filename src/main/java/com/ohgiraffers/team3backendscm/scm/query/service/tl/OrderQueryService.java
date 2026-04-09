@@ -14,7 +14,7 @@ import java.util.List;
 
 /**
  * 팀 리더(TL) 권한의 주문 조회 Query 서비스.
- * OrderMapper 를 통해 MyBatis 쿼리를 실행하고 결과를 컨트롤러에 전달한다.
+ * OrderMapper를 통해 MyBatis 쿼리를 실행하고 결과를 컨트롤러에 전달한다.
  * 데이터 변경 없이 읽기 전용으로 동작한다.
  */
 @Service
@@ -26,7 +26,7 @@ public class OrderQueryService {
     /**
      * 검색 조건에 따라 주문 목록을 조회한다.
      *
-     * @param request 상태·난이도 등급 필터, 키워드, 페이징 조건을 담은 요청 DTO
+     * @param request 상태·난이도 등급 필터, 키워드 검색 조건 등을 담은 요청 DTO
      * @return 조건에 맞는 주문 요약 목록
      */
     public List<OrderReadDto> getOrders(OrderQueryRequest request) {
@@ -34,7 +34,7 @@ public class OrderQueryService {
     }
 
     /**
-     * 납기 3일 이내의 긴급 주문 목록을 조회한다.
+     * 최근 3일 이내의 긴급 주문 목록을 조회한다.
      *
      * @return 긴급 주문 목록
      */

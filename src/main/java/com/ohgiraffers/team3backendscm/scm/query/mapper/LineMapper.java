@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * 공장 라인(Line) 조회 전용 MyBatis 매퍼 인터페이스.
  * 라인별 주문 처리 요약 및 특정 라인의 실시간 운영 현황 조회를 담당한다.
- * SQL은 src/main/resources/mappers/lines.xml 에 정의된다.
+ * SQL은 src/main/resources/mapper/lines.xml 에 정의한다.
  */
 @Mapper
 public interface LineMapper {

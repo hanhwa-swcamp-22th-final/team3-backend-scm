@@ -7,11 +7,15 @@ import com.ohgiraffers.team3backendscm.scm.command.application.dto.request.Reass
 import com.ohgiraffers.team3backendscm.scm.command.application.service.tl.AssignmentCommandService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import com.ohgiraffers.team3backendscm.jwt.JwtTokenProvider;
+import com.ohgiraffers.team3backendscm.jwt.RestAccessDeniedHandler;
+import com.ohgiraffers.team3backendscm.jwt.RestAuthenticationEntryPoint;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -31,11 +35,13 @@ class AssignmentCommandControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
-    private AssignmentCommandService assignmentCommandService;
+    @MockBean private AssignmentCommandService assignmentCommandService;
+    @MockBean private JwtTokenProvider jwtTokenProvider;
+    @MockBean private UserDetailsService userDetailsService;
+    @MockBean private RestAccessDeniedHandler restAccessDeniedHandler;
+    @MockBean private RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    @Autowired private ObjectMapper objectMapper;
 
     @Test
     @DisplayName("POST /api/v1/scm/assignments → 200 OK + ApiResponse.success")

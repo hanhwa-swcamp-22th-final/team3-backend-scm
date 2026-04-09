@@ -8,8 +8,8 @@ import java.time.LocalDate;
 
 /**
  * 특정 설비에 배치된 기술자(직원) 배치 정보를 담는 응답 DTO.
- * 누가 어떤 날짜에 해당 설비에 배치되었는지를 제공한다.
- * GET /api/v1/scm/facilities/{facilityId}/deployments 에서 반환된다.
+ * 누가 언제 어떤 날짜에 해당 설비에 배치되었는지를 제공한다.
+ * GET /api/v1/scm/facilities/{facilityId}/deployments 에서 반환한다.
  */
 @Getter
 @NoArgsConstructor
