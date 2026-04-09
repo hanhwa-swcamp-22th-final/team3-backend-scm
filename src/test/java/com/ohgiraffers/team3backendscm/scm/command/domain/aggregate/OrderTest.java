@@ -4,6 +4,7 @@ import com.ohgiraffers.team3backendscm.common.idgenerator.TimeBasedIdGenerator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -112,5 +113,40 @@ class OrderTest {
 
         // then - 긴급 주문으로 판별되어야 한다
         assertTrue(order.isUrgent());
+    }
+    @Test
+    @DisplayName("난이도 분석 결과를 반영하면 주문 상태가 ANALYZED로 변경된다")
+    void applyDifficultyAnalysis_Success() {
+        Order order = Order.register(idGenerator.generate(), 1L, 2L, "ORD-0501", 40, LocalDate.now().plusDays(7), true);
+
+        order.applyDifficultyAnalysis(
+            new BigDecimal("7.20"),
+            new BigDecimal("8.10"),
+            new BigDecimal("6.40"),
+            new BigDecimal("9.00"),
+            new BigDecimal("10.00"),
+            new BigDecimal("88.50"),
+            DifficultyGrade.D4
+        );
+
+        assertEquals(OrderStatus.ANALYZED, order.getStatus());
+        assertEquals(DifficultyGrade.D4, order.getDifficultyGrade());
+        assertEquals(0, order.getDifficultyScore().compareTo(new BigDecimal("88.50")));
+    }
+
+    @Test
+    @DisplayName("진행 중인 주문에는 난이도 분석 결과를 다시 반영할 수 없다")
+    void applyDifficultyAnalysis_FailWhenInProgress() {
+        Order order = new Order(idGenerator.generate(), "ORD-0502", OrderStatus.INPROGRESS, LocalDate.now().plusDays(3));
+
+        assertThrows(IllegalStateException.class, () -> order.applyDifficultyAnalysis(
+            new BigDecimal("7.20"),
+            new BigDecimal("8.10"),
+            new BigDecimal("6.40"),
+            new BigDecimal("9.00"),
+            new BigDecimal("10.00"),
+            new BigDecimal("88.50"),
+            DifficultyGrade.D4
+        ));
     }
 }

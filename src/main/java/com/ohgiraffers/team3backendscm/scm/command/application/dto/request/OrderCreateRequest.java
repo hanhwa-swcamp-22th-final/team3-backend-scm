@@ -1,8 +1,12 @@
 package com.ohgiraffers.team3backendscm.scm.command.application.dto.request;
 
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.math.BigDecimal;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -34,13 +38,37 @@ public class OrderCreateRequest {
 
     private Boolean isFirstOrder = false; // 해당 제품의 최초 주문 여부 (기본값: false)
 
+    @NotNull(message = "공정 단계 수는 필수입니다.")
+    @Min(value = 1, message = "공정 단계 수는 1 이상이어야 합니다.")
+    @Max(value = 50, message = "공정 단계 수는 50 이하여야 합니다.")
+    private Integer processStepCount;
+
+    @NotNull(message = "허용 공차는 필수입니다.")
+    @DecimalMin(value = "0.0001", message = "허용 공차는 0보다 커야 합니다.")
+    @Digits(integer = 4, fraction = 4, message = "허용 공차는 소수점 넷째 자리까지 입력 가능합니다.")
+    private BigDecimal toleranceMm;
+
+    @NotNull(message = "스킬 레벨은 필수입니다.")
+    @Min(value = 1, message = "스킬 레벨은 1 이상이어야 합니다.")
+    @Max(value = 5, message = "스킬 레벨은 5 이하여야 합니다.")
+    private Integer skillLevel;
+
     public OrderCreateRequest(Long productId, Long configId, String orderNumber,
                               Integer orderQuantity, LocalDate dueDate, Boolean isFirstOrder) {
+        this(productId, configId, orderNumber, orderQuantity, dueDate, 1, new BigDecimal("0.1000"), 1, isFirstOrder);
+    }
+
+    public OrderCreateRequest(Long productId, Long configId, String orderNumber,
+                              Integer orderQuantity, LocalDate dueDate, Integer processStepCount,
+                              BigDecimal toleranceMm, Integer skillLevel, Boolean isFirstOrder) {
         this.productId = productId;
         this.configId = configId;
         this.orderNumber = orderNumber;
         this.orderQuantity = orderQuantity;
         this.dueDate = dueDate;
+        this.processStepCount = processStepCount;
+        this.toleranceMm = toleranceMm;
+        this.skillLevel = skillLevel;
         this.isFirstOrder = isFirstOrder;
     }
 }

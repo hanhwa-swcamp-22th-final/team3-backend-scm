@@ -20,7 +20,7 @@ public class OrderOcsaDto {
     private Long orderId;                       // 주문 PK
     private BigDecimal v1ProcessComplexity;     // V1: 공정 복잡도 점수
     private BigDecimal v2QualityPrecision;      // V2: 품질 정밀도 점수
-    private BigDecimal v3CapacityRequirements;  // V3: 설비 용량 요구도 점수
+    private BigDecimal v3CapacityRequirements;  // V3: 역량 요구도 점수
     private BigDecimal v4SpaceTimeUrgency;      // V4: 공간·시간 긴급도 점수
     private BigDecimal alphaNovlety;            // α: 신규도 보정 계수
     private BigDecimal difficultyScore;         // OCSA 가중합으로 산출된 최종 난이도 점수

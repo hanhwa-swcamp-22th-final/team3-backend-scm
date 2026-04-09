@@ -45,6 +45,15 @@ public class Order {
     @Column(name = "order_deadline", nullable = false)
     private LocalDate dueDate; // 납기 마감일
 
+    @Column(name = "process_step_count")
+    private Integer processStepCount; // V1 input snapshot
+
+    @Column(name = "tolerance_mm", precision = 8, scale = 4)
+    private BigDecimal toleranceMm; // V2 input snapshot
+
+    @Column(name = "skill_level")
+    private Integer skillLevel; // V3 input snapshot
+
     @Column(name = "is_first_order")
     private Boolean isFirstOrder; // 해당 제품의 최초 주문 여부 (alpha 신규도 반영에 사용)
 
@@ -61,7 +70,7 @@ public class Order {
     private BigDecimal v2QualityPrecision; // V2: 품질 정밀도
 
     @Column(name = "v3_capacity_requirements")
-    private BigDecimal v3CapacityRequirements; // V3: 설비 용량 요구도
+    private BigDecimal v3CapacityRequirements; // V3: 역량 요구도 (legacy column name kept for compatibility)
 
     @Column(name = "v4_space_time_urgency")
     private BigDecimal v4SpaceTimeUrgency; // V4: 공간·시간 긴급도
@@ -199,6 +208,12 @@ public class Order {
      */
     public static Order register(Long id, Long productId, Long configId, String orderNumber,
                                  Integer quantity, LocalDate dueDate, Boolean isFirstOrder) {
+        return register(id, productId, configId, orderNumber, quantity, dueDate, 1, new BigDecimal("0.1000"), 1, isFirstOrder);
+    }
+
+    public static Order register(Long id, Long productId, Long configId, String orderNumber,
+                                 Integer quantity, LocalDate dueDate, Integer processStepCount,
+                                 BigDecimal toleranceMm, Integer skillLevel, Boolean isFirstOrder) {
         Order order = new Order();
         order.orderId = id;
         order.productId = productId;
@@ -206,6 +221,9 @@ public class Order {
         order.orderNumber = orderNumber;
         order.orderQuantity = quantity;
         order.dueDate = dueDate;
+        order.processStepCount = processStepCount;
+        order.toleranceMm = toleranceMm;
+        order.skillLevel = skillLevel;
         order.isFirstOrder = isFirstOrder;
         order.status = OrderStatus.REGISTERED;
         return order;
@@ -221,7 +239,29 @@ public class Order {
      * @param dueDate     변경할 납기 마감일
      * @throws IllegalStateException REGISTERED 상태가 아닐 경우
      */
+    public void updateInfo(
+        Long productId,
+        String orderNumber,
+        Integer quantity,
+        LocalDate dueDate,
+        Integer processStepCount,
+        BigDecimal toleranceMm,
+        Integer skillLevel
+    ) {
+        if (this.status != OrderStatus.REGISTERED) {
+            throw new IllegalStateException("REGISTERED 상태의 주문만 수정할 수 있습니다. 현재 상태: " + this.status);
+        }
+        this.productId = productId;
+        this.orderNumber = orderNumber;
+        this.orderQuantity = quantity;
+        this.dueDate = dueDate;
+        this.processStepCount = processStepCount;
+        this.toleranceMm = toleranceMm;
+        this.skillLevel = skillLevel;
+    }
+
     public void updateInfo(Long productId, String orderNumber, Integer quantity, LocalDate dueDate) {
+        updateInfo(productId, orderNumber, quantity, dueDate, this.processStepCount, this.toleranceMm, this.skillLevel);
         if (this.status != OrderStatus.REGISTERED) {
             throw new IllegalStateException("REGISTERED 상태의 주문만 수정할 수 있습니다. 현재 상태: " + this.status);
         }
@@ -236,6 +276,29 @@ public class Order {
      *
      * @return 납기가 오늘로부터 3일 이내이면 true
      */
+    public void applyDifficultyAnalysis(
+        BigDecimal v1ProcessComplexity,
+        BigDecimal v2QualityPrecision,
+        BigDecimal v3CapacityRequirements,
+        BigDecimal v4SpaceTimeUrgency,
+        BigDecimal alphaNovelty,
+        BigDecimal difficultyScore,
+        DifficultyGrade difficultyGrade
+    ) {
+        if (this.status != OrderStatus.REGISTERED && this.status != OrderStatus.ANALYZED) {
+            throw new IllegalStateException("REGISTERED 또는 ANALYZED 상태의 주문만 난이도 분석 결과를 반영할 수 있습니다. 현재 상태: " + this.status);
+        }
+
+        this.v1ProcessComplexity = v1ProcessComplexity;
+        this.v2QualityPrecision = v2QualityPrecision;
+        this.v3CapacityRequirements = v3CapacityRequirements;
+        this.v4SpaceTimeUrgency = v4SpaceTimeUrgency;
+        this.alphaNovlety = alphaNovelty;
+        this.difficultyScore = difficultyScore;
+        this.difficultyGrade = difficultyGrade;
+        this.status = OrderStatus.ANALYZED;
+    }
+
     public boolean isUrgent() {
         return !dueDate.isAfter(LocalDate.now().plusDays(3));
     }

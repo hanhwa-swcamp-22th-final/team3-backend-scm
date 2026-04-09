@@ -42,7 +42,7 @@ public class OcsaWeightConfig {
     private BigDecimal weightV2; // V2(품질 정밀도) 가중치
 
     @Column(name = "weight_v3")
-    private BigDecimal weightV3; // V3(설비 용량 요구도) 가중치
+    private BigDecimal weightV3; // V3(역량 요구도) 가중치
 
     @Column(name = "weight_v4")
     private BigDecimal weightV4; // V4(공간·시간 긴급도) 가중치
