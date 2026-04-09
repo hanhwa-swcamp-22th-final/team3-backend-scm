@@ -5,6 +5,7 @@ import com.ohgiraffers.team3backendscm.scm.command.application.dto.request.TaskF
 import com.ohgiraffers.team3backendscm.scm.command.application.service.worker.TaskCommandService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/scm")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('WORKER')")
 public class TaskCommandController {
 
     private final TaskCommandService taskCommandService;
