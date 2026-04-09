@@ -8,16 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * ?묒뾽??Worker) 沅뚰븳???묒뾽 ?ㅽ뻾 Command REST 而⑦듃濡ㅻ윭.
- * 湲곕낯 寃쎈줈: /api/v1/scm
- * <p>
- * ?쒓났 ?붾뱶?ъ씤??
- * <ul>
- *   <li>POST /workers/me/today-tasks/{taskId}/start         - ?묒뾽 ?쒖옉</li>
- *   <li>POST /workers/me/today-tasks/{taskId}/finish-draft  - ?묒뾽 醫낅즺 ?꾩떆???/li>
- *   <li>POST /workers/me/today-tasks/{taskId}/finish        - ?묒뾽 醫낅즺 ?쒖텧</li>
- * </ul>
- * </p>
+ * 작업자 권한의 작업 시작, 임시 저장, 종료 제출을 처리하는 Command REST 컨트롤러이다.
+ * 기본 경로는 /api/v1/scm 이다.
  */
 @RestController
 @RequestMapping("/api/v1/scm")
@@ -27,11 +19,11 @@ public class TaskCommandController {
     private final TaskCommandService taskCommandService;
 
     /**
-     * ?묒뾽???쒖옉?쒕떎.
-     * MatchingRecord ??workStartAt ???꾩옱 ?쒓컖?쇰줈 湲곕줉?쒕떎.
+     * 작업을 시작한다.
+     * workStartAt 을 현재 시각으로 기록한다.
      *
-     * @param taskId ?쒖옉???묒뾽??諛곗젙 湲곕줉 ID (matching_record_id)
-     * @return ?깃났 ?щ?瑜??댁? ApiResponse (data = null)
+     * @param taskId 시작할 작업의 배정 기록 ID
+     * @return 성공 응답
      */
     @PostMapping("/workers/me/today-tasks/{taskId}/start")
     public ResponseEntity<ApiResponse<Void>> startTask(@PathVariable Long taskId) {
@@ -40,12 +32,12 @@ public class TaskCommandController {
     }
 
     /**
-     * ?묒뾽 寃곌낵瑜??꾩떆??ν븳??
-     * workEndAt쨌comment 瑜?湲곕줉?섎릺 諛곗젙 ?곹깭???좎??쒕떎.
+     * 작업 결과를 임시 저장한다.
+     * workEndAt 과 comment 를 저장하되 배정 상태는 유지한다.
      *
-     * @param taskId  ?꾩떆??ν븷 ?묒뾽??諛곗젙 湲곕줉 ID
-     * @param request 肄붾찘?몃? ?댁? ?붿껌 DTO
-     * @return ?깃났 ?щ?瑜??댁? ApiResponse (data = null)
+     * @param taskId 임시 저장할 작업의 배정 기록 ID
+     * @param request 작업 종료 요청 DTO
+     * @return 성공 응답
      */
     @PostMapping("/workers/me/today-tasks/{taskId}/finish-draft")
     public ResponseEntity<ApiResponse<Void>> finishDraft(
@@ -56,12 +48,12 @@ public class TaskCommandController {
     }
 
     /**
-     * ?묒뾽???꾨즺 ?쒖텧?쒕떎.
-     * MatchingRecord ?곹깭瑜?COMPLETE 濡??꾪솚?섍퀬 二쇰Ц ?곹깭瑜?COMPLETED 濡?蹂寃쏀븳??
+     * 작업 종료를 제출한다.
+     * MatchingRecord 상태를 COMPLETE 로 바꾸고 주문 상태를 COMPLETED 로 변경한다.
      *
-     * @param taskId  ?꾨즺???묒뾽??諛곗젙 湲곕줉 ID
-     * @param request 肄붾찘?몃? ?댁? ?붿껌 DTO
-     * @return ?깃났 ?щ?瑜??댁? ApiResponse (data = null)
+     * @param taskId 종료 제출할 작업의 배정 기록 ID
+     * @param request 작업 종료 요청 DTO
+     * @return 성공 응답
      */
     @PostMapping("/workers/me/today-tasks/{taskId}/finish")
     public ResponseEntity<ApiResponse<Void>> finish(

@@ -11,8 +11,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 /**
- * ?묒뾽??Worker) 沅뚰븳??蹂몄씤 ?대젰 議고쉶 Query ?쒕퉬??
- * WorkerMapper 瑜??듯빐 ?묒뾽???먯떊???ㅻ퉬 諛곗튂 ?대젰怨?二쇰Ц 諛곗젙 ?대젰???쎄린 ?꾩슜?쇰줈 ?쒓났?쒕떎.
+ * 작업자 권한에서 본인 관련 이력을 조회하는 Query 서비스이다.
  */
 @Service
 @RequiredArgsConstructor
@@ -21,42 +20,40 @@ public class WorkerQueryService {
     private final WorkerMapper workerMapper;
 
     /**
-     * ?뱀젙 ?묒뾽?먯쓽 誘몄셿猷??묒뾽 紐⑸줉??議고쉶?쒕떎.
-     * ?좎쭨 臾닿??섍쾶 REJECT쨌COMPLETE ?곹깭瑜??쒖쇅???꾩껜 諛곗젙 ?묒뾽??諛섑솚?쒕떎.
+     * 본인의 미완료 작업 목록을 조회한다.
      *
-     * @param employeeId 議고쉶???묒뾽??吏곸썝) ID
-     * @return 誘몄셿猷??묒뾽 紐⑸줉
+     * @param employeeId 조회할 작업자 ID
+     * @return 미완료 작업 목록
      */
     public List<TaskDto> getMyPendingTasks(Long employeeId) {
         return workerMapper.findMyPendingTasks(employeeId);
     }
 
     /**
-     * ?뱀젙 ?묒뾽?먯쓽 ?ㅻ퉬 諛곗튂 ?대젰??議고쉶?쒕떎.
+     * 본인의 설비 배치 이력을 조회한다.
      *
-     * @param employeeId 議고쉶???묒뾽??吏곸썝) ID
-     * @return ?ㅻ퉬 諛곗튂 ?대젰 紐⑸줉
+     * @param employeeId 조회할 작업자 ID
+     * @return 설비 배치 이력 목록
      */
     public List<WorkerDeploymentDto> getMyDeployments(Long employeeId) {
         return workerMapper.findMyDeployments(employeeId);
     }
 
     /**
-     * ?뱀젙 ?묒뾽?먯쓽 二쇰Ц 諛곗젙 ?대젰??議고쉶?쒕떎.
+     * 본인의 주문 배정 이력을 조회한다.
      *
-     * @param employeeId 議고쉶???묒뾽??吏곸썝) ID
-     * @return 二쇰Ц 諛곗젙 ?대젰 紐⑸줉
+     * @param employeeId 조회할 작업자 ID
+     * @return 주문 배정 이력 목록
      */
     public List<WorkerMatchingHistoryDto> getMyMatchingHistory(Long employeeId) {
         return workerMapper.findMyMatchingHistory(employeeId);
     }
 
     /**
-     * ?뱀젙 ?묒뾽?먯쓽 ?곹깭蹂??묒뾽 ?섎? 吏묎퀎?쒕떎.
-     * CONFIRM쨌INPROGRESS쨌COMPLETE ?곹깭蹂?移댁슫?몃? 諛섑솚?쒕떎.
+     * 본인의 작업 상태별 집계를 조회한다.
      *
-     * @param employeeId 議고쉶???묒뾽??吏곸썝) ID
-     * @return ?곹깭蹂??묒뾽 ??吏묎퀎 DTO
+     * @param employeeId 조회할 작업자 ID
+     * @return 작업 상태 집계 DTO
      */
     public WorkerTaskSummaryDto getMyTaskSummary(Long employeeId) {
         return workerMapper.findMyTaskSummary(employeeId);

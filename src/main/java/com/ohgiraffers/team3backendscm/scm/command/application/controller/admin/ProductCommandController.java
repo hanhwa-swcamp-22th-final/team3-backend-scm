@@ -11,8 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * Admin 紐⑤뱢???몄텧?섎뒗 ?쒗뭹(Product) ?깅줉쨌?섏젙쨌??젣 REST 而⑦듃濡ㅻ윭.
- * 湲곕낯 寃쎈줈: /api/v1/scm/admin/products
+ * Admin 모듈에서 호출하는 상품 등록, 수정, 삭제용 REST 컨트롤러이다.
+ * 기본 경로는 /api/v1/scm/admin/products 이다.
  */
 @RestController
 @RequestMapping("/api/v1/scm/admin/products")
@@ -22,10 +22,10 @@ public class ProductCommandController {
     private final ProductCommandService productCommandService;
 
     /**
-     * ?쒗뭹???깅줉?쒕떎.
+     * 상품을 등록한다.
      *
-     * @param request ?쒗뭹紐끒룹퐫?쒕? ?댁? ?붿껌 DTO
-     * @return ?앹꽦???쒗뭹 ID
+     * @param request 상품 등록 요청 DTO
+     * @return 생성된 상품 ID
      */
     @PostMapping
     public ResponseEntity<ApiResponse<Long>> createProduct(@Valid @RequestBody ProductCreateRequest request) {
@@ -34,11 +34,11 @@ public class ProductCommandController {
     }
 
     /**
-     * ?쒗뭹 ?뺣낫瑜??섏젙?쒕떎.
+     * 상품 정보를 수정한다.
      *
-     * @param productId ?섏젙???쒗뭹 ID
-     * @param request   蹂寃쏀븷 ?쒗뭹紐끒룹퐫?쒕? ?댁? ?붿껌 DTO
-     * @return ?깃났 ?묐떟 (data = null)
+     * @param productId 수정할 상품 ID
+     * @param request 상품 수정 요청 DTO
+     * @return 성공 응답
      */
     @PutMapping("/{productId}")
     public ResponseEntity<ApiResponse<Void>> updateProduct(
@@ -49,10 +49,10 @@ public class ProductCommandController {
     }
 
     /**
-     * ?쒗뭹????젣?쒕떎.
+     * 상품을 삭제한다.
      *
-     * @param productId ??젣???쒗뭹 ID
-     * @return ?깃났 ?묐떟 (data = null)
+     * @param productId 삭제할 상품 ID
+     * @return 성공 응답
      */
     @DeleteMapping("/{productId}")
     public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable Long productId) {

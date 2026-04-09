@@ -5,14 +5,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 諛곗젙 湲곗닠??蹂寃??щ같?? ?붿껌 DTO.
- * PUT /api/v1/scm/assignments/{matchingRecordId} ?먯꽌 ?ъ슜?쒕떎.
+ * 배정된 기술자를 변경할 때 사용하는 요청 DTO이다.
+ * PUT /api/v1/scm/assignments/{matchingRecordId} 에서 사용한다.
  */
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class ReassignRequest {
 
-    /** ?덈줈 諛곗젙??湲곗닠??employee_id) */
+    /** 새로 배정할 기술자 employee_id */
     private Long technicianId;
 }

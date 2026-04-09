@@ -11,11 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * Admin 紐⑤뱢???몄텧?섎뒗 二쇰Ц(Order) ?깅줉쨌?섏젙쨌??젣 REST 而⑦듃濡ㅻ윭.
- * 湲곕낯 寃쎈줈: /api/v1/scm/admin/orders
- * <p>
- * SCM ?뚰겕?뚮줈??議고쉶쨌?곹깭 蹂寃???蹂꾨룄 TL/Worker 而⑦듃濡ㅻ윭?먯꽌 泥섎━?쒕떎.
- * </p>
+ * Admin 모듈에서 호출하는 주문 등록, 수정, 삭제용 REST 컨트롤러이다.
+ * 기본 경로는 /api/v1/scm/admin/orders 이다.
  */
 @RestController
 @RequestMapping("/api/v1/scm/admin/orders")
@@ -25,10 +22,10 @@ public class OrderCommandController {
     private final OrderCommandService orderCommandService;
 
     /**
-     * 二쇰Ц???깅줉?쒕떎. 珥덇린 ?곹깭??REGISTERED濡?怨좎젙?쒕떎.
+     * 주문을 등록한다.
      *
-     * @param request 二쇰Ц ?뺣낫瑜??댁? ?붿껌 DTO
-     * @return ?앹꽦??二쇰Ц ID
+     * @param request 주문 등록 요청 DTO
+     * @return 생성된 주문 ID
      */
     @PostMapping
     public ResponseEntity<ApiResponse<Long>> createOrder(@Valid @RequestBody OrderCreateRequest request) {
@@ -37,11 +34,11 @@ public class OrderCommandController {
     }
 
     /**
-     * 二쇰Ц 湲곕낯 ?뺣낫瑜??섏젙?쒕떎. REGISTERED ?곹깭??二쇰Ц留??덉슜?쒕떎.
+     * 주문 기본 정보를 수정한다.
      *
-     * @param orderId ?섏젙??二쇰Ц ID
-     * @param request 蹂寃쏀븷 ?뺣낫瑜??댁? ?붿껌 DTO
-     * @return ?깃났 ?묐떟 (data = null)
+     * @param orderId 수정할 주문 ID
+     * @param request 주문 수정 요청 DTO
+     * @return 성공 응답
      */
     @PutMapping("/{orderId}")
     public ResponseEntity<ApiResponse<Void>> updateOrder(
@@ -52,10 +49,10 @@ public class OrderCommandController {
     }
 
     /**
-     * 二쇰Ц????젣?쒕떎. REGISTERED ?곹깭??二쇰Ц留??덉슜?쒕떎.
+     * 주문을 삭제한다.
      *
-     * @param orderId ??젣??二쇰Ц ID
-     * @return ?깃났 ?묐떟 (data = null)
+     * @param orderId 삭제할 주문 ID
+     * @return 성공 응답
      */
     @DeleteMapping("/{orderId}")
     public ResponseEntity<ApiResponse<Void>> deleteOrder(@PathVariable Long orderId) {

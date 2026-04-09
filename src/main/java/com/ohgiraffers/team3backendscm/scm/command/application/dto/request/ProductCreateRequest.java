@@ -5,17 +5,17 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * Admin??SCM???쒗뭹???깅줉?????ъ슜?섎뒗 ?붿껌 DTO.
+ * Admin SCM 에서 상품 등록 시 사용하는 요청 DTO이다.
  */
 @Getter
 @NoArgsConstructor
 public class ProductCreateRequest {
 
-    @NotBlank(message = "?쒗뭹紐낆? ?꾩닔?낅땲??")
-    private String productName; // ?쒗뭹 紐낆묶
+    @NotBlank(message = "상품명은 필수입니다.")
+    private String productName;
 
-    @NotBlank(message = "?쒗뭹 肄붾뱶???꾩닔?낅땲??")
-    private String productCode; // ?쒗뭹 怨좎쑀 肄붾뱶
+    @NotBlank(message = "상품 코드는 필수입니다.")
+    private String productCode;
 
     public ProductCreateRequest(String productName, String productCode) {
         this.productName = productName;

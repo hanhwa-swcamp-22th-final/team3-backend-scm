@@ -22,12 +22,7 @@ import java.time.LocalDateTime;
 import java.util.NoSuchElementException;
 
 /**
- * Admin???몄텧?섎뒗 二쇰Ц(Order) ?깅줉쨌?섏젙쨌??젣 Command ?쒕퉬??
- * <p>
- * - ?깅줉: REGISTERED ?곹깭濡??앹꽦 (OCSA 遺꾩꽍? SCM???댄썑 泥섎━)
- * - ?섏젙: REGISTERED ?곹깭??二쇰Ц留??덉슜 (SCM ?뚰겕?뚮줈??吏꾩엯 ?꾧퉴吏留?蹂寃?媛??
- * - ??젣: REGISTERED ?곹깭??二쇰Ц留??덉슜
- * </p>
+ * Admin 모듈에서 호출하는 주문 등록, 수정, 삭제용 Command 서비스이다.
  */
 @Service
 @RequiredArgsConstructor
@@ -40,18 +35,18 @@ public class OrderCommandService {
     private final OrderEventPublisher orderEventPublisher;
 
     /**
-     * 二쇰Ц???깅줉?쒕떎. 珥덇린 ?곹깭??REGISTERED濡?怨좎젙?쒕떎.
+     * 주문을 등록한다.
      *
-     * @param request 二쇰Ц ?뺣낫瑜??댁? ?붿껌 DTO
-     * @return ?앹꽦??二쇰Ц ID
+     * @param request 주문 등록 요청 DTO
+     * @return 생성된 주문 ID
      */
     @Transactional
     public Long create(OrderCreateRequest request) {
         Long id = idGenerator.generate();
         Product product = productRepository.findById(request.getProductId())
-            .orElseThrow(() -> new NoSuchElementException("?곹뭹??李얠쓣 ???놁뒿?덈떎. id=" + request.getProductId()));
+            .orElseThrow(() -> new NoSuchElementException("상품을 찾을 수 없습니다. id=" + request.getProductId()));
         OcsaWeightConfig weightConfig = ocsaWeightConfigRepository.findById(request.getConfigId())
-            .orElseThrow(() -> new NoSuchElementException("OCSA ?ㅼ젙??李얠쓣 ???놁뒿?덈떎. id=" + request.getConfigId()));
+            .orElseThrow(() -> new NoSuchElementException("OCSA 설정을 찾을 수 없습니다. id=" + request.getConfigId()));
 
         Order order = Order.register(
                 id,
@@ -91,17 +86,15 @@ public class OrderCommandService {
     }
 
     /**
-     * 二쇰Ц 湲곕낯 ?뺣낫瑜??섏젙?쒕떎. REGISTERED ?곹깭??二쇰Ц留??덉슜?쒕떎.
+     * 주문 기본 정보를 수정한다.
      *
-     * @param orderId ?섏젙??二쇰Ц ID
-     * @param request 蹂寃쏀븷 ?뺣낫瑜??댁? ?붿껌 DTO
-     * @throws NoSuchElementException 二쇰Ц??李얠쓣 ???놁쓣 寃쎌슦
-     * @throws IllegalStateException  REGISTERED ?곹깭媛 ?꾨땺 寃쎌슦
+     * @param orderId 수정할 주문 ID
+     * @param request 주문 수정 요청 DTO
      */
     @Transactional
     public void update(Long orderId, OrderUpdateRequest request) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new NoSuchElementException("二쇰Ц??李얠쓣 ???놁뒿?덈떎. id=" + orderId));
+                .orElseThrow(() -> new NoSuchElementException("주문을 찾을 수 없습니다. id=" + orderId));
         order.updateInfo(request.getProductId(), request.getOrderNumber(),
                 request.getOrderQuantity(), request.getDueDate(),
                 request.getProcessStepCount(), request.getToleranceMm(), request.getSkillLevel());
@@ -109,21 +102,20 @@ public class OrderCommandService {
     }
 
     /**
-     * 二쇰Ц????젣?쒕떎. REGISTERED ?곹깭??二쇰Ц留??덉슜?쒕떎.
+     * 주문을 삭제한다.
      *
-     * @param orderId ??젣??二쇰Ц ID
-     * @throws NoSuchElementException 二쇰Ц??李얠쓣 ???놁쓣 寃쎌슦
-     * @throws IllegalStateException  REGISTERED ?곹깭媛 ?꾨땺 寃쎌슦
+     * @param orderId 삭제할 주문 ID
      */
     @Transactional
     public void delete(Long orderId) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new NoSuchElementException("二쇰Ц??李얠쓣 ???놁뒿?덈떎. id=" + orderId));
+                .orElseThrow(() -> new NoSuchElementException("주문을 찾을 수 없습니다. id=" + orderId));
         if (order.getStatus() != OrderStatus.REGISTERED) {
-            throw new IllegalStateException("REGISTERED ?곹깭??二쇰Ц留???젣?????덉뒿?덈떎. ?꾩옱 ?곹깭: " + order.getStatus());
+            throw new IllegalStateException("REGISTERED 상태의 주문만 삭제할 수 있습니다. 현재 상태: " + order.getStatus());
         }
         orderRepository.delete(order);
     }
+
     private void publishRegisteredAfterCommit(OrderRegisteredEvent event) {
         Runnable publishAction = () -> orderEventPublisher.publishRegistered(event);
 
