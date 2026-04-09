@@ -9,6 +9,7 @@ import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentTimeline
 import com.ohgiraffers.team3backendscm.scm.query.service.tl.AssignmentQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -67,6 +68,7 @@ public class AssignmentQueryController {
      * @return 배정 현황 요약 DTO
      */
     @GetMapping("/assignments/summary")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ApiResponse<AssignmentSummaryDto>> getSummary() {
         AssignmentSummaryDto summary = assignmentQueryService.getSummary();
         return ResponseEntity.ok(ApiResponse.success(summary));
