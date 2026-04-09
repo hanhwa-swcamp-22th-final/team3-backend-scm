@@ -5,13 +5,12 @@ import com.ohgiraffers.team3backendscm.infrastructure.kafka.dto.OrderRegisteredE
 import com.ohgiraffers.team3backendscm.infrastructure.kafka.publisher.OrderEventPublisher;
 import com.ohgiraffers.team3backendscm.scm.command.application.dto.request.OrderCreateRequest;
 import com.ohgiraffers.team3backendscm.scm.command.application.dto.request.OrderUpdateRequest;
-import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.OcsaWeightConfig;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.Order;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.OrderStatus;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.Product;
-import com.ohgiraffers.team3backendscm.scm.command.domain.repository.OcsaWeightConfigRepository;
 import com.ohgiraffers.team3backendscm.scm.command.domain.repository.OrderRepository;
 import com.ohgiraffers.team3backendscm.scm.command.domain.repository.ProductRepository;
+import java.math.BigDecimal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,9 +27,11 @@ import java.util.NoSuchElementException;
 @RequiredArgsConstructor
 public class OrderCommandService {
 
+    private static final BigDecimal DEFAULT_WEIGHT = new BigDecimal("0.25");
+    private static final BigDecimal DEFAULT_ALPHA_WEIGHT = new BigDecimal("0.50");
+
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
-    private final OcsaWeightConfigRepository ocsaWeightConfigRepository;
     private final IdGenerator idGenerator;
     private final OrderEventPublisher orderEventPublisher;
 
@@ -45,8 +46,6 @@ public class OrderCommandService {
         Long id = idGenerator.generate();
         Product product = productRepository.findById(request.getProductId())
             .orElseThrow(() -> new NoSuchElementException("상품을 찾을 수 없습니다. id=" + request.getProductId()));
-        OcsaWeightConfig weightConfig = ocsaWeightConfigRepository.findById(request.getConfigId())
-            .orElseThrow(() -> new NoSuchElementException("OCSA 설정을 찾을 수 없습니다. id=" + request.getConfigId()));
 
         Order order = Order.register(
                 id,
@@ -74,12 +73,12 @@ public class OrderCommandService {
                 request.getIsFirstOrder(),
                 product.getProductName(),
                 product.getProductCode(),
-                weightConfig.getIndustryPreset() == null ? null : weightConfig.getIndustryPreset().name(),
-                weightConfig.getWeightV1(),
-                weightConfig.getWeightV2(),
-                weightConfig.getWeightV3(),
-                weightConfig.getWeightV4(),
-                weightConfig.getAlphaWeight(),
+                null,
+                DEFAULT_WEIGHT,
+                DEFAULT_WEIGHT,
+                DEFAULT_WEIGHT,
+                DEFAULT_WEIGHT,
+                DEFAULT_ALPHA_WEIGHT,
                 LocalDateTime.now()
         ));
         return id;
