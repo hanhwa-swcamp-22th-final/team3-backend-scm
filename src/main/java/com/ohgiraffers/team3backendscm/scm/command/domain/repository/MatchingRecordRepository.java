@@ -4,6 +4,7 @@ import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingReco
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingStatus;
 import com.ohgiraffers.team3backendscm.scm.command.infrastructure.repository.JpaMatchingRecordRepository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,6 +30,15 @@ public interface MatchingRecordRepository extends JpaMatchingRecordRepository {
      * @return 배정 기록 목록
      */
     List<MatchingRecord> findByEmployeeId(Long technicianId);
+
+    /**
+     * 특정 기술자의 특정 날짜(배정 생성일 기준) 배정 기록 조회.
+     *
+     * @param technicianId 조회할 기술자(employee_id)
+     * @param assignedDate 배정 생성 날짜
+     * @return 배정 기록 목록
+     */
+    List<MatchingRecord> findByTechnicianIdAndAssignedDate(Long technicianId, LocalDate assignedDate);
 
     /**
      * 특정 주문에 대한 배정 기록 조회.
