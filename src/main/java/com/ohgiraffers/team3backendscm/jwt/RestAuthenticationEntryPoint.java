@@ -13,9 +13,6 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
-/**
- * 인증 실패 시 JSON 형식으로 에러 응답을 반환하는 엔트리 포인트.
- */
 @Component
 public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
 

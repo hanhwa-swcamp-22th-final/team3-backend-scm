@@ -13,9 +13,6 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
-/**
- * 인가 실패 시 JSON 형식으로 에러 응답을 반환하는 핸들러.
- */
 @Component
 public class RestAccessDeniedHandler implements AccessDeniedHandler {
 
