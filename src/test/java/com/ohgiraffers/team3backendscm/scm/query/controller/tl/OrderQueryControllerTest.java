@@ -1,6 +1,8 @@
 package com.ohgiraffers.team3backendscm.scm.query.controller.tl;
 
-import com.ohgiraffers.team3backendscm.scm.query.controller.tl.OrderQueryController;
+import com.ohgiraffers.team3backendscm.jwt.JwtTokenProvider;
+import com.ohgiraffers.team3backendscm.jwt.RestAccessDeniedHandler;
+import com.ohgiraffers.team3backendscm.jwt.RestAuthenticationEntryPoint;
 import com.ohgiraffers.team3backendscm.scm.query.dto.request.OrderQueryRequest;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.OcsaSummaryDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.OrderDetailDto;
@@ -13,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -31,8 +34,11 @@ class OrderQueryControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
-    private OrderQueryService orderQueryService;
+    @MockBean private OrderQueryService orderQueryService;
+    @MockBean private JwtTokenProvider jwtTokenProvider;
+    @MockBean private UserDetailsService userDetailsService;
+    @MockBean private RestAccessDeniedHandler restAccessDeniedHandler;
+    @MockBean private RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
     @Test
     @DisplayName("GET /api/v1/scm/orders → 200 OK")

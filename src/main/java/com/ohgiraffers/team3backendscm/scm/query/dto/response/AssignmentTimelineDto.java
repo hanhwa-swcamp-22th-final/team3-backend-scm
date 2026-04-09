@@ -8,8 +8,8 @@ import java.time.LocalDate;
 
 /**
  * 라인별 배정 타임라인 정보를 담는 응답 DTO.
- * 특정 공장 라인에 어떤 기술자가 언제 배정되었고 해당 주문의 상태가 어떤지를 시계열로 보여준다.
- * GET /api/v1/scm/assignments/timeline 에서 반환된다.
+ * 특정 공장 라인의 어떤 기술자가 실제 배정되었고 해당 주문의 상태가 어떤지를 시계열로 보여준다.
+ * GET /api/v1/scm/assignments/timeline 에서 반환한다.
  */
 @Getter
 @NoArgsConstructor
@@ -24,3 +24,4 @@ public class AssignmentTimelineDto {
     private String orderNo;          // 관련 주문 번호
     private String orderStatus;      // 관련 주문 처리 상태 (OrderStatus 문자열)
 }
+

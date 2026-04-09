@@ -15,8 +15,8 @@ import java.time.LocalDateTime;
 
 /**
  * 기술자(Technician)와 주문(Order) 간의 배정 매칭 기록 엔티티.
- * 팀 리더가 특정 주문에 기술자를 배정할 때마다 한 건이 생성된다.
- * 배정 방식(MatchingMode), 기대 성과 지표, 품질 리스크를 함께 저장한다.
+ * 팀 리더가 특정 주문에 기술자를 배정할 때마다 한 건씩 생성된다.
+ * 배정 방식(MatchingMode), 기대 결과 지표, 품질 리스크를 함께 저장한다.
  */
 @Entity
 @Table(name = "matching_record")
@@ -41,19 +41,19 @@ public class MatchingRecord {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "matching_status", nullable = false)
-    private MatchingStatus status; // 배정 처리 상태 (RECOMMEND → CONFIRM 등)
+    private MatchingStatus status; // 배정 처리 상태 (RECOMMEND 또는 CONFIRM 등)
 
     @Column(name = "d_c_ratio")
-    private BigDecimal dcRatio; // 난이도 대비 역량 비율 (Difficulty-Capability Ratio)
+    private BigDecimal dcRatio; // 난이도 대비 숙련도 비율 (Difficulty-Capability Ratio)
 
     @Column(name = "expected_bonus")
     private BigDecimal expectedBonus; // 배정 시 산정된 기대 보너스 금액
 
     @Column(name = "expected_productivity")
-    private BigDecimal expectedProductivity; // 배정 기술자의 기대 생산성 지수
+    private BigDecimal expectedProductivity; // 배정 기술자의 기대 생산성 지표
 
     @Column(name = "quality_risk")
-    private BigDecimal qualityRisk; // 품질 불량 발생 위험 지수
+    private BigDecimal qualityRisk; // 품질 불량 발생 위험 지표
 
     @Column(name = "work_start_at")
     private LocalDateTime workStartAt; // 작업 시작 일시
@@ -64,7 +64,7 @@ public class MatchingRecord {
     @Column(name = "comment", length = 500)
     private String comment; // 배정 코멘트
 
-    // ── JPA Auditing 자동 채워짐 ──
+    // 이하 JPA Auditing으로 자동 채워지는 필드들
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)
@@ -99,13 +99,13 @@ public class MatchingRecord {
         this.status = MatchingStatus.CONFIRM;
     }
 
-    /** 재배정 — 기술자 ID와 매칭 모드를 새 값으로 변경한다 */
+    /** 재배치 시 기술자 ID와 매칭 모드를 새 값으로 변경한다. */
     public void reassign(Long newTechnicianId, MatchingMode newMatchingMode) {
         this.employeeId = newTechnicianId;
         this.matchingMode = newMatchingMode;
     }
 
-    /** 배정 취소 — 완료(COMPLETE)된 배정은 취소 불가 */
+    /** 배정 취소 시 완료(COMPLETE)된 배정은 취소 불가 */
     public void cancel() {
         if (this.status == MatchingStatus.COMPLETE) {
             throw new IllegalStateException("완료된 배정은 취소할 수 없습니다.");
@@ -113,7 +113,7 @@ public class MatchingRecord {
         this.status = MatchingStatus.REJECT;
     }
 
-    /** 작업 시작 — workStartAt 을 현재 시각으로 설정한다. 이미 시작된 경우 예외 */
+    /** 작업 시작 시 workStartAt 을 현재 시각으로 설정한다. 이미 시작된 경우 예외. */
     public void startWork() {
         if (this.workStartAt != null) {
             throw new IllegalStateException("이미 시작된 작업입니다.");
@@ -121,13 +121,13 @@ public class MatchingRecord {
         this.workStartAt = LocalDateTime.now();
     }
 
-    /** 작업 종료 임시저장 — workEndAt·comment 를 기록하되 상태는 유지한다 */
+    /** 작업 종료 일시를 설정한다. workEndAt·comment 를 기록하되 상태는 유지한다. */
     public void finishDraft(String comment) {
         this.workEndAt = LocalDateTime.now();
         this.comment = comment;
     }
 
-    /** 작업 종료 제출 — workEndAt·comment 확정 및 상태를 COMPLETE 로 전환한다 */
+    /** 작업 종료 호출 시 workEndAt·comment 를 수정하고 상태를 COMPLETE 로 전환한다. */
     public void finish(String comment) {
         this.workEndAt = LocalDateTime.now();
         this.comment = comment;

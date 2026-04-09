@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.NoSuchElementException;
 
 /**
- * Admin이 호출하는 제품(Product) 등록·수정·삭제 Command 서비스.
+ * Admin???�출?�는 ?�품(Product) ?�록·?�정·??�� Command ?�비??
  */
 @Service
 @RequiredArgsConstructor
@@ -23,10 +23,10 @@ public class ProductCommandService {
     private final IdGenerator idGenerator;
 
     /**
-     * 제품을 등록한다.
+     * ?�품???�록?�다.
      *
-     * @param request 제품명·코드를 담은 요청 DTO
-     * @return 생성된 제품 ID
+     * @param request ?�품명·코?��? ?��? ?�청 DTO
+     * @return ?�성???�품 ID
      */
     @Transactional
     public Long create(ProductCreateRequest request) {
@@ -37,11 +37,11 @@ public class ProductCommandService {
     }
 
     /**
-     * 제품 정보를 수정한다.
+     * ?�품 ?�보�??�정?�다.
      *
-     * @param productId 수정할 제품 ID
-     * @param request   변경할 제품명·코드를 담은 요청 DTO
-     * @throws NoSuchElementException 제품을 찾을 수 없을 경우
+     * @param productId ?�정???�품 ID
+     * @param request   변경할 ?�품명·코?��? ?��? ?�청 DTO
+     * @throws NoSuchElementException ?�품??찾을 ???�을 경우
      */
     @Transactional
     public void update(Long productId, ProductUpdateRequest request) {
@@ -52,10 +52,10 @@ public class ProductCommandService {
     }
 
     /**
-     * 제품을 삭제한다.
+     * ?�품????��?�다.
      *
-     * @param productId 삭제할 제품 ID
-     * @throws NoSuchElementException 제품을 찾을 수 없을 경우
+     * @param productId ??��???�품 ID
+     * @throws NoSuchElementException ?�품??찾을 ???�을 경우
      */
     @Transactional
     public void delete(Long productId) {

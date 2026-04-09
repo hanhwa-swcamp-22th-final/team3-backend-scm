@@ -5,10 +5,14 @@ import com.ohgiraffers.team3backendscm.scm.command.application.dto.request.TaskF
 import com.ohgiraffers.team3backendscm.scm.command.application.service.worker.TaskCommandService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import com.ohgiraffers.team3backendscm.jwt.JwtTokenProvider;
+import com.ohgiraffers.team3backendscm.jwt.RestAccessDeniedHandler;
+import com.ohgiraffers.team3backendscm.jwt.RestAuthenticationEntryPoint;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -36,34 +40,37 @@ class TaskCommandControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
-    private TaskCommandService taskCommandService;
+    @MockBean private TaskCommandService taskCommandService;
+    @MockBean private JwtTokenProvider jwtTokenProvider;
+    @MockBean private UserDetailsService userDetailsService;
+    @MockBean private RestAccessDeniedHandler restAccessDeniedHandler;
+    @MockBean private RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
     @Autowired
     private ObjectMapper objectMapper;
 
     @Test
-    @DisplayName("POST /api/v1/scm/tasks/1/start → 200 OK + ApiResponse.success")
+    @DisplayName("POST /api/v1/scm/workers/me/today-tasks/1/start → 200 OK + ApiResponse.success")
     void startTask_Return200() throws Exception {
         // given
         doNothing().when(taskCommandService).startTask(anyLong());
 
         // when & then
-        mockMvc.perform(post("/api/v1/scm/tasks/1/start")
+        mockMvc.perform(post("/api/v1/scm/workers/me/today-tasks/1/start")
                         .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
-    @DisplayName("POST /api/v1/scm/tasks/1/finish-draft → 200 OK + ApiResponse.success")
+    @DisplayName("POST /api/v1/scm/workers/me/today-tasks/1/finish-draft → 200 OK + ApiResponse.success")
     void finishDraft_Return200() throws Exception {
         // given
         TaskFinishRequest request = new TaskFinishRequest("임시 코멘트");
         doNothing().when(taskCommandService).finishDraft(anyLong(), any());
 
         // when & then
-        mockMvc.perform(post("/api/v1/scm/tasks/1/finish-draft")
+        mockMvc.perform(post("/api/v1/scm/workers/me/today-tasks/1/finish-draft")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -72,14 +79,14 @@ class TaskCommandControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/v1/scm/tasks/1/finish → 200 OK + ApiResponse.success")
+    @DisplayName("POST /api/v1/scm/workers/me/today-tasks/1/finish → 200 OK + ApiResponse.success")
     void finish_Return200() throws Exception {
         // given
         TaskFinishRequest request = new TaskFinishRequest("최종 코멘트");
         doNothing().when(taskCommandService).finish(anyLong(), any());
 
         // when & then
-        mockMvc.perform(post("/api/v1/scm/tasks/1/finish")
+        mockMvc.perform(post("/api/v1/scm/workers/me/today-tasks/1/finish")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))

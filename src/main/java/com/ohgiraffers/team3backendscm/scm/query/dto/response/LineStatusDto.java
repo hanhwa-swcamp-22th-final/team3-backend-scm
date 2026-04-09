@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
  * 특정 공장 라인의 실시간 운영 현황을 담는 응답 DTO.
  * 배치된 기술자 수, 진행 중인 주문 수, 설비 가동률 등을 포함하여
  * 팀 리더가 개별 라인 상태를 상세히 파악할 수 있도록 한다.
- * GET /api/v1/scm/lines/{lineId}/status 에서 반환된다.
+ * GET /api/v1/scm/lines/{lineId}/status 에서 반환한다.
  */
 @Getter
 @NoArgsConstructor

@@ -1,6 +1,6 @@
 package com.ohgiraffers.team3backendscm.scm.query.controller.tl;
 
-import com.ohgiraffers.team3backendscm.common.ApiResponse;
+import com.ohgiraffers.team3backendscm.common.dto.ApiResponse;
 import com.ohgiraffers.team3backendscm.scm.query.dto.request.OrderQueryRequest;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.OcsaSummaryDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.OrderDetailDto;
@@ -42,7 +42,7 @@ public class OrderQueryController {
     private final OrderQueryService orderQueryService;
 
     /**
-     * 상태·난이도 등급 필터, 키워드, 페이징 조건에 따라 주문 목록을 조회한다.
+     * 상태·난이도 등급 필터, 키워드 검색 조건 등에 따라 주문 목록을 조회한다.
      *
      * @param request 쿼리 파라미터로 바인딩되는 검색 조건 DTO
      * @return 조건에 맞는 주문 요약 목록
@@ -55,7 +55,7 @@ public class OrderQueryController {
     }
 
     /**
-     * 납기 3일 이내의 긴급 주문 목록을 조회한다.
+     * 최근 3일 이내의 긴급 주문 목록을 조회한다.
      *
      * @return 긴급 주문 목록
      */
@@ -77,7 +77,7 @@ public class OrderQueryController {
     }
 
     /**
-     * 전체 주문 현황 집계 요약(총 수, 진행 중, 납기 위험, 달성률, 칸반 컬럼별 카운트)을 조회한다.
+     * 전체 주문 현황 집계 요약(총수, 진행 건수, 납기 위험, 달성률, 칸반 컬럼별 카운트)을 조회한다.
      *
      * @return 주문 현황 요약 DTO
      */

@@ -1,6 +1,5 @@
 package com.ohgiraffers.team3backendscm.config.security;
 
-
 import com.ohgiraffers.team3backendscm.jwt.EmployeeUserDetails;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.security.core.Authentication;

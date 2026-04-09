@@ -12,7 +12,7 @@ import java.util.Optional;
 
 /**
  * 배정(Assignment) 조회 전용 MyBatis 매퍼 인터페이스.
- * SQL은 src/main/resources/mappers/assignments.xml 에 정의된다.
+ * SQL은 src/main/resources/mapper/assignments.xml 에 정의한다.
  * 후보 기술자, 배정 요약, 타임라인, 재조정 현황 등의 조회 기능을 제공한다.
  */
 @Mapper
@@ -20,7 +20,7 @@ public interface AssignmentMapper {
 
     /**
      * 배정 기록 ID로 단건 배정 상세를 조회한다.
-     * matching_record, orders, employee 를 JOIN해 반환한다.
+     * matching_record, orders, employee 를 JOIN하여 반환한다.
      *
      * @param matchingRecordId 조회할 배정 기록 PK
      * @return 배정 상세 DTO (존재하지 않으면 empty)
@@ -28,8 +28,8 @@ public interface AssignmentMapper {
     Optional<AssignmentDetailDto> findById(Long matchingRecordId);
 
     /**
-     * 배정 가능한 기술자 후보 목록을 조회한다.
-     * 각 후보의 역량 티어, OCSA 점수, 적합도를 포함한다.
+     * 배정 가능한 기술자 정보 목록을 조회한다.
+     * 각 후보의 숙련도 티어, OCSA 점수, 적합도를 포함한다.
      *
      * @return 배정 후보 기술자 목록
      */
@@ -50,7 +50,7 @@ public interface AssignmentMapper {
     List<AssignmentTimelineDto> findTimeline();
 
     /**
-     * 라인별 기술자 티어 분포 및 권장 배치 수를 포함한 재조정 현황을 조회한다.
+     * 라인별 기술자 티어 분포 및 권장 배치 인원 포함 재조정 현황을 조회한다.
      *
      * @return 라인별 재조정 현황 목록
      */

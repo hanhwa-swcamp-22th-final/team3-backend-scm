@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 /**
  * OCSA 분석 현황 요약 정보를 담는 응답 DTO.
  * 분석 완료된 주문 수, 평균 난이도 점수, 최고 난이도 등급을 반환한다.
- * GET /api/v1/scm/orders/ocsa/summary 에서 반환된다.
+ * GET /api/v1/scm/orders/ocsa/summary 에서 반환한다.
  */
 @Getter
 @NoArgsConstructor

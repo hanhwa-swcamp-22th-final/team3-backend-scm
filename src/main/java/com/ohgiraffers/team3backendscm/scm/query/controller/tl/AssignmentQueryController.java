@@ -1,6 +1,6 @@
 package com.ohgiraffers.team3backendscm.scm.query.controller.tl;
 
-import com.ohgiraffers.team3backendscm.common.ApiResponse;
+import com.ohgiraffers.team3backendscm.common.dto.ApiResponse;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentCandidateDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentDetailDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentRebalanceDto;
@@ -52,9 +52,9 @@ public class AssignmentQueryController {
     }
 
     /**
-     * 배정 가능한 기술자 후보 목록을 조회한다.
+     * 배정 가능한 기술자 정보 목록을 조회한다.
      *
-     * @return 후보 기술자 목록 (역량 티어, OCSA 점수, 적합도 포함)
+     * @return 후보 기술자 목록 (보유 티어, OCSA 점수, 적합도 포함)
      */
     @GetMapping("/assignments/candidates")
     public ResponseEntity<ApiResponse<List<AssignmentCandidateDto>>> getCandidates() {
@@ -86,7 +86,7 @@ public class AssignmentQueryController {
     }
 
     /**
-     * 라인별 기술자 티어 분포 및 권장 배치 수를 포함한 재조정 현황을 조회한다.
+     * 라인별 기술자 티어 분포 및 권장 배치 인원 포함 재조정 현황을 조회한다.
      *
      * @return 라인별 재조정 현황 목록
      */

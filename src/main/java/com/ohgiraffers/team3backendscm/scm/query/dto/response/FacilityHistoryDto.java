@@ -8,8 +8,8 @@ import java.time.LocalDateTime;
 
 /**
  * 설비 이벤트 이력 정보를 담는 응답 DTO.
- * 설비에서 발생한 장애, 점검, 교체 등의 이벤트 내역을 시간 순으로 제공한다.
- * GET /api/v1/scm/facilities/{facilityId}/history 에서 반환된다.
+ * 설비에서 발생한 장애, 점검, 교체 등의 이벤트 내역을 시간순으로 제공한다.
+ * GET /api/v1/scm/facilities/{facilityId}/history 에서 반환한다.
  */
 @Getter
 @NoArgsConstructor
