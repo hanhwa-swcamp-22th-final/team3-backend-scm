@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.NoSuchElementException;
 
 /**
- * Admin???�출?�는 ?�품(Product) ?�록·?�정·??�� Command ?�비??
+ * Admin???몄텧?섎뒗 ?쒗뭹(Product) ?깅줉쨌?섏젙쨌??젣 Command ?쒕퉬??
  */
 @Service
 @RequiredArgsConstructor
@@ -23,10 +23,10 @@ public class ProductCommandService {
     private final IdGenerator idGenerator;
 
     /**
-     * ?�품???�록?�다.
+     * ?쒗뭹???깅줉?쒕떎.
      *
-     * @param request ?�품명·코?��? ?��? ?�청 DTO
-     * @return ?�성???�품 ID
+     * @param request ?쒗뭹紐끒룹퐫?쒕? ?댁? ?붿껌 DTO
+     * @return ?앹꽦???쒗뭹 ID
      */
     @Transactional
     public Long create(ProductCreateRequest request) {
@@ -37,11 +37,11 @@ public class ProductCommandService {
     }
 
     /**
-     * ?�품 ?�보�??�정?�다.
+     * ?쒗뭹 ?뺣낫瑜??섏젙?쒕떎.
      *
-     * @param productId ?�정???�품 ID
-     * @param request   변경할 ?�품명·코?��? ?��? ?�청 DTO
-     * @throws NoSuchElementException ?�품??찾을 ???�을 경우
+     * @param productId ?섏젙???쒗뭹 ID
+     * @param request   蹂寃쏀븷 ?쒗뭹紐끒룹퐫?쒕? ?댁? ?붿껌 DTO
+     * @throws NoSuchElementException ?쒗뭹??李얠쓣 ???놁쓣 寃쎌슦
      */
     @Transactional
     public void update(Long productId, ProductUpdateRequest request) {
@@ -52,10 +52,10 @@ public class ProductCommandService {
     }
 
     /**
-     * ?�품????��?�다.
+     * ?쒗뭹????젣?쒕떎.
      *
-     * @param productId ??��???�품 ID
-     * @throws NoSuchElementException ?�품??찾을 ???�을 경우
+     * @param productId ??젣???쒗뭹 ID
+     * @throws NoSuchElementException ?쒗뭹??李얠쓣 ???놁쓣 寃쎌슦
      */
     @Transactional
     public void delete(Long productId) {

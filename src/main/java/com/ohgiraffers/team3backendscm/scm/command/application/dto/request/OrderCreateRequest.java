@@ -7,50 +7,45 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-
-/**
- * Admin??SCM??주문???�록?????�용?�는 ?�청 DTO.
- * ?�록??주문?� REGISTERED ?�태�??�작?�며, OCSA 분석 ??SCM ?�크?�로?��? 진행?�다.
- */
 @Getter
 @NoArgsConstructor
 public class OrderCreateRequest {
 
-    @NotNull(message = "?�품 ID???�수?�니??")
-    private Long productId; // 주문 ?�???�품 ID
+    @NotNull(message = "Product id is required.")
+    private Long productId;
 
-    @NotNull(message = "OCSA ?�정 ID???�수?�니??")
-    private Long configId; // OCSA 가중치 ?�정 ID
+    @NotNull(message = "OCSA config id is required.")
+    private Long configId;
 
-    @NotBlank(message = "주문 번호???�수?�니??")
-    private String orderNumber; // ?�람???�을 ???�는 주문 번호 (?? ORD-20240101-001)
+    @NotBlank(message = "Order number is required.")
+    private String orderNumber;
 
-    @NotNull(message = "주문 ?�량?� ?�수?�니??")
-    @Min(value = 1, message = "주문 ?�량?� 1 ?�상?�어???�니??")
-    private Integer orderQuantity; // 주문 ?�량
+    @NotNull(message = "Order quantity is required.")
+    @Min(value = 1, message = "Order quantity must be at least 1.")
+    private Integer orderQuantity;
 
-    @NotNull(message = "?�기 마감?��? ?�수?�니??")
-    private LocalDate dueDate; // ?�기 마감??
+    @NotNull(message = "Due date is required.")
+    private LocalDate dueDate;
 
-    private Boolean isFirstOrder = false; // ?�당 ?�품??최초 주문 ?��? (기본�? false)
+    private Boolean isFirstOrder = false;
 
-    @NotNull(message = "공정 단계 수는 필수입니다.")
-    @Min(value = 1, message = "공정 단계 수는 1 이상이어야 합니다.")
-    @Max(value = 50, message = "공정 단계 수는 50 이하여야 합니다.")
+    @NotNull(message = "Process step count is required.")
+    @Min(value = 1, message = "Process step count must be at least 1.")
+    @Max(value = 50, message = "Process step count must be 50 or less.")
     private Integer processStepCount;
 
-    @NotNull(message = "허용 공차는 필수입니다.")
-    @DecimalMin(value = "0.0001", message = "허용 공차는 0보다 커야 합니다.")
-    @Digits(integer = 4, fraction = 4, message = "허용 공차는 소수점 넷째 자리까지 입력 가능합니다.")
+    @NotNull(message = "Tolerance is required.")
+    @DecimalMin(value = "0.0001", message = "Tolerance must be greater than 0.")
+    @Digits(integer = 4, fraction = 4, message = "Tolerance supports up to 4 integer digits and 4 decimal digits.")
     private BigDecimal toleranceMm;
 
-    @NotNull(message = "스킬 레벨은 필수입니다.")
-    @Min(value = 1, message = "스킬 레벨은 1 이상이어야 합니다.")
-    @Max(value = 5, message = "스킬 레벨은 5 이하여야 합니다.")
+    @NotNull(message = "Skill level is required.")
+    @Min(value = 1, message = "Skill level must be at least 1.")
+    @Max(value = 5, message = "Skill level must be 5 or less.")
     private Integer skillLevel;
 
     public OrderCreateRequest(Long productId, Long configId, String orderNumber,

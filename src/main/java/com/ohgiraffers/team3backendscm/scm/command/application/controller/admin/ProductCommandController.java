@@ -11,8 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * Admin 모듈???�출?�는 ?�품(Product) ?�록·?�정·??�� REST 컨트롤러.
- * 기본 경로: /api/v1/scm/admin/products
+ * Admin 紐⑤뱢???몄텧?섎뒗 ?쒗뭹(Product) ?깅줉쨌?섏젙쨌??젣 REST 而⑦듃濡ㅻ윭.
+ * 湲곕낯 寃쎈줈: /api/v1/scm/admin/products
  */
 @RestController
 @RequestMapping("/api/v1/scm/admin/products")
@@ -22,10 +22,10 @@ public class ProductCommandController {
     private final ProductCommandService productCommandService;
 
     /**
-     * ?�품???�록?�다.
+     * ?쒗뭹???깅줉?쒕떎.
      *
-     * @param request ?�품명·코?��? ?��? ?�청 DTO
-     * @return ?�성???�품 ID
+     * @param request ?쒗뭹紐끒룹퐫?쒕? ?댁? ?붿껌 DTO
+     * @return ?앹꽦???쒗뭹 ID
      */
     @PostMapping
     public ResponseEntity<ApiResponse<Long>> createProduct(@Valid @RequestBody ProductCreateRequest request) {
@@ -34,11 +34,11 @@ public class ProductCommandController {
     }
 
     /**
-     * ?�품 ?�보�??�정?�다.
+     * ?쒗뭹 ?뺣낫瑜??섏젙?쒕떎.
      *
-     * @param productId ?�정???�품 ID
-     * @param request   변경할 ?�품명·코?��? ?��? ?�청 DTO
-     * @return ?�공 ?�답 (data = null)
+     * @param productId ?섏젙???쒗뭹 ID
+     * @param request   蹂寃쏀븷 ?쒗뭹紐끒룹퐫?쒕? ?댁? ?붿껌 DTO
+     * @return ?깃났 ?묐떟 (data = null)
      */
     @PutMapping("/{productId}")
     public ResponseEntity<ApiResponse<Void>> updateProduct(
@@ -49,10 +49,10 @@ public class ProductCommandController {
     }
 
     /**
-     * ?�품????��?�다.
+     * ?쒗뭹????젣?쒕떎.
      *
-     * @param productId ??��???�품 ID
-     * @return ?�공 ?�답 (data = null)
+     * @param productId ??젣???쒗뭹 ID
+     * @return ?깃났 ?묐떟 (data = null)
      */
     @DeleteMapping("/{productId}")
     public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable Long productId) {

@@ -50,7 +50,7 @@ public class AssignmentCommandService {
     @Transactional
     public void assign(AssignRequest request) {
         Order order = orderRepository.findById(request.getOrderId())
-            .orElseThrow(() -> new NoSuchElementException("주문을 찾을 수 없습니다. id=" + request.getOrderId()));
+            .orElseThrow(() -> new NoSuchElementException("Order not found. id=" + request.getOrderId()));
 
         // 기술자의 숙련도 티어 조회 (employee 및 HR 정보 또는 EmployeeMapper)
         String employeeTier = employeeMapper.findTierById(request.getTechnicianId());
@@ -79,10 +79,10 @@ public class AssignmentCommandService {
     @Transactional
     public void reassign(Long matchingRecordId, ReassignRequest request) {
         MatchingRecord record = matchingRecordRepository.findById(matchingRecordId)
-            .orElseThrow(() -> new NoSuchElementException("배정 기록을 찾을 수 없습니다. id=" + matchingRecordId));
+            .orElseThrow(() -> new NoSuchElementException("Assignment record not found. id=" + matchingRecordId));
 
         Order order = orderRepository.findById(record.getOrderId())
-            .orElseThrow(() -> new NoSuchElementException("주문을 찾을 수 없습니다. id=" + record.getOrderId()));
+            .orElseThrow(() -> new NoSuchElementException("Order not found. id=" + record.getOrderId()));
 
         String employeeTier = employeeMapper.findTierById(request.getTechnicianId());
         MatchingMode newMatchingMode = MatchingMode.determine(order.getDifficultyGrade(), employeeTier);
@@ -103,10 +103,10 @@ public class AssignmentCommandService {
     @Transactional
     public void cancel(Long matchingRecordId) {
         MatchingRecord record = matchingRecordRepository.findById(matchingRecordId)
-            .orElseThrow(() -> new NoSuchElementException("배정 기록을 찾을 수 없습니다. id=" + matchingRecordId));
+            .orElseThrow(() -> new NoSuchElementException("Assignment record not found. id=" + matchingRecordId));
 
         Order order = orderRepository.findById(record.getOrderId())
-            .orElseThrow(() -> new NoSuchElementException("주문을 찾을 수 없습니다. id=" + record.getOrderId()));
+            .orElseThrow(() -> new NoSuchElementException("Order not found. id=" + record.getOrderId()));
 
         record.cancel();
         matchingRecordRepository.save(record);
