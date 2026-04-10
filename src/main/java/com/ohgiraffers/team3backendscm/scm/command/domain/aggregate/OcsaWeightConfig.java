@@ -3,8 +3,6 @@ package com.ohgiraffers.team3backendscm.scm.command.domain.aggregate;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
@@ -20,7 +18,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
-@Table(name = "OCSA_weight_config")
+@Table(name = "`OCSA_weight_config`")
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -30,9 +28,8 @@ public class OcsaWeightConfig {
     @Column(name = "config_id")
     private Long configId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "industry_preset", nullable = false)
-    private IndustryPreset industryPreset;
+    @Column(name = "industry_preset_name")
+    private String industryPreset;
 
     @Column(name = "weight_v1")
     private BigDecimal weightV1;

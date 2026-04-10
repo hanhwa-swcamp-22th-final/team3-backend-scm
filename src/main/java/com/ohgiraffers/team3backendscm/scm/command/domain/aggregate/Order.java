@@ -171,6 +171,7 @@ public class Order {
         order.skillLevel = skillLevel;
         order.isFirstOrder = isFirstOrder;
         order.status = OrderStatus.REGISTERED;
+        order.difficultyGrade = DifficultyGrade.D1;
         return order;
     }
 
