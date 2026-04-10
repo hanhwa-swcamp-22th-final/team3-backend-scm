@@ -62,7 +62,7 @@ public class FacilityQueryService {
      * @return 설비 운영 요약 DTO
      */
     public FacilitySummaryDto getFacilitySummary() {
-        EquipmentSummaryResponse res = adminClient.getEquipmentSummary("summary").getData();
+        EquipmentSummaryResponse res = adminClient.getEquipmentSummary();
         return new FacilitySummaryDto(
                 (int) res.getTotalCount(),
                 (int) res.getOperatingCount(),
@@ -80,8 +80,7 @@ public class FacilityQueryService {
      * @return 환경 이상 트렌드 목록
      */
     public List<FacilityTrendsDto> getFacilityTrends(Long facilityId) {
-        List<EnvironmentEventResponse> events =
-                adminClient.getEnvironmentEvents("history", facilityId).getData();
+        List<EnvironmentEventResponse> events = adminClient.getEnvironmentEvents(facilityId);
         return events.stream()
                 .map(e -> new FacilityTrendsDto(
                         e.getEquipmentId(),
