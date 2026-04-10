@@ -1,37 +1,25 @@
 package com.ohgiraffers.team3backendscm.infrastructure.client;
 
-import com.ohgiraffers.team3backendscm.common.dto.ApiResponse;
 import com.ohgiraffers.team3backendscm.infrastructure.client.dto.EnvironmentEventResponse;
 import com.ohgiraffers.team3backendscm.infrastructure.client.dto.EquipmentSummaryResponse;
-import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
 /**
- * Admin 모듈 Feign Client.
- * 설비 요약 및 환경 이벤트 데이터를 Admin REST API를 통해 조회한다.
+ * Admin 모듈 클라이언트 계약 인터페이스.
+ * HTTP/Feign 세부 구현을 숨기고 서비스 레이어에 순수 비즈니스 메서드만 노출한다.
  */
-@FeignClient(name = "admin-client", url = "${admin.url}")
 public interface AdminClient {
 
     /**
-     * 설비 상태별 집계 요약 조회.
-     * Admin: GET /api/v1/equipment-management/equipments?mode=summary
+     * 설비 상태별 집계 요약을 조회한다.
      */
-    @GetMapping("/api/v1/equipment-management/equipments")
-    ApiResponse<EquipmentSummaryResponse> getEquipmentSummary(
-            @RequestParam("mode") String mode
-    );
+    EquipmentSummaryResponse getEquipmentSummary();
 
     /**
-     * 특정 설비의 환경 이벤트 이력 조회.
-     * Admin: GET /api/v1/equipment-management/environment-events?mode=history&equipmentId={id}
+     * 특정 설비의 환경 이벤트 이력을 조회한다.
+     *
+     * @param equipmentId 조회할 설비 ID (null 이면 전체)
      */
-    @GetMapping("/api/v1/equipment-management/environment-events")
-    ApiResponse<List<EnvironmentEventResponse>> getEnvironmentEvents(
-            @RequestParam("mode") String mode,
-            @RequestParam(value = "equipmentId", required = false) Long equipmentId
-    );
+    List<EnvironmentEventResponse> getEnvironmentEvents(Long equipmentId);
 }
