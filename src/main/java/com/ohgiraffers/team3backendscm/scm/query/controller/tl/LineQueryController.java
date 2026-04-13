@@ -45,6 +45,17 @@ public class LineQueryController {
     }
 
     /**
+     * 현재 인증된 팀리더의 팀원이 배치된 라인 요약을 조회한다.
+     *
+     * @return 팀원 기준 라인 요약 목록
+     */
+    @GetMapping("/lines/my-team/summary")
+    public ResponseEntity<ApiResponse<List<LineSummaryDto>>> getMyTeamLinesSummary() {
+        List<LineSummaryDto> summary = lineQueryService.getMyTeamLinesSummary();
+        return ResponseEntity.ok(ApiResponse.success(summary));
+    }
+
+    /**
      * 특정 라인의 실시간 운영 현황을 조회한다.
      *
      * @param lineId 조회할 라인 ID

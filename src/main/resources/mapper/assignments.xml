@@ -103,10 +103,14 @@
         <result property="factoryLineId"   column="factory_line_id"/>
         <result property="factoryLineName" column="factory_line_name"/>
         <result property="employeeId"      column="employee_id"/>
+        <result property="employeeName"    column="employee_name"/>
+        <result property="employeeTier"    column="employee_tier"/>
         <result property="assignedDate"    column="assigned_date"/>
         <result property="matchingStatus"  column="matching_status"/>
         <result property="orderNo"         column="order_no"/>
         <result property="orderStatus"     column="order_status"/>
+        <result property="workStartAt"     column="work_start_at"/>
+        <result property="workEndAt"       column="work_end_at"/>
     </resultMap>
 
     <select id="findTimeline" resultMap="TimelineMap">
@@ -114,12 +118,17 @@
             fl.factory_line_id,
             fl.factory_line_name,
             mr.employee_id,
+            e.employee_name,
+            e.employee_tier,
             DATE(mr.created_at) AS assigned_date,
             mr.matching_status,
             o.order_no,
-            o.order_status
+            o.order_status,
+            mr.work_start_at,
+            mr.work_end_at
         FROM matching_record mr
         JOIN orders o ON mr.order_id = o.order_id
+        JOIN employee e ON mr.employee_id = e.employee_id
         JOIN worker_deployment wd ON mr.employee_id = wd.employee_id
             AND DATE(mr.created_at) BETWEEN wd.start_date AND COALESCE(wd.end_date, CURDATE())
         JOIN equipment eq ON wd.equipment_id = eq.equipment_id

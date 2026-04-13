@@ -1,6 +1,7 @@
 package com.ohgiraffers.team3backendscm.scm.query.service.tl;
 
 import com.ohgiraffers.team3backendscm.infrastructure.client.AdminClient;
+import com.ohgiraffers.team3backendscm.infrastructure.client.HrClient;
 import com.ohgiraffers.team3backendscm.infrastructure.client.dto.EnvironmentEventResponse;
 import com.ohgiraffers.team3backendscm.infrastructure.client.dto.EquipmentSummaryResponse;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.FacilityDeploymentDto;
@@ -10,6 +11,7 @@ import com.ohgiraffers.team3backendscm.scm.query.dto.response.FacilitySummaryDto
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.FacilityTrendsDto;
 import com.ohgiraffers.team3backendscm.scm.query.mapper.FacilityMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,12 +21,14 @@ import java.util.List;
  * 설비 목록·이력·배치 인원은 SCM DB(FacilityMapper)에서 조회하고,
  * 설비 요약·환경 트렌드는 Admin Feign Client를 통해 조회한다.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FacilityQueryService {
 
     private final FacilityMapper facilityMapper;
     private final AdminClient adminClient;
+    private final HrClient hrClient;
 
     /**
      * 전체 설비 목록을 조회한다.
@@ -79,6 +83,26 @@ public class FacilityQueryService {
      * @param facilityId 조회할 설비 ID
      * @return 환경 이상 트렌드 목록
      */
+    /**
+     * 로그인한 TL의 팀원이 배치된 설비 목록을 조회한다.
+     * HR 서비스에서 팀원 목록을 가져와 해당 팀원이 배치된 설비만 반환한다.
+     * HR 호출 실패 시 전체 설비를 반환한다(폴백).
+     *
+     * @return 팀원 배치 설비 목록
+     */
+    public List<FacilityDto> getMyTeamFacilities() {
+        try {
+            List<Long> employeeIds = hrClient.getTeamMembers().stream()
+                    .map(m -> m.getEmployeeId())
+                    .toList();
+            if (employeeIds.isEmpty()) return List.of();
+            return facilityMapper.findTeamFacilities(employeeIds);
+        } catch (Exception e) {
+            log.warn("HR 팀원 조회 실패, 전체 설비로 폴백: {}", e.getMessage());
+            return facilityMapper.findFacilities();
+        }
+    }
+
     public List<FacilityTrendsDto> getFacilityTrends(Long facilityId) {
         List<EnvironmentEventResponse> events = adminClient.getEnvironmentEvents(facilityId);
         return events.stream()

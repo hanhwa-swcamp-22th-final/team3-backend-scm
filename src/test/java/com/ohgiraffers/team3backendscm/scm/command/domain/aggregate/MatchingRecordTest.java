@@ -4,8 +4,11 @@ import com.ohgiraffers.team3backendscm.common.idgenerator.TimeBasedIdGenerator;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingMode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import java.time.LocalDateTime;
 
 /**
  * MatchingRecord 도메인 엔티티의 비즈니스 규칙을 검증하는 단위 테스트.
@@ -13,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p>테스트 전략: 순수 단위 테스트 (외부 의존성 없음)
  * - 배정 기록 생성 시 초기 상태(CONFIRM) 검증
  * - 배정 취소(cancel): REJECT 전환 및 완료 배정 취소 불가 검증
- * - 작업 시작(startWork): workStartAt 기록 및 중복 시작 불가 검증
+ * - 작업 시작(startWork): INPROGRESS 전환, workStartAt 기록 및 중복 시작 불가 검증
  * - 임시저장(finishDraft): workEndAt·comment 기록 및 상태 미변경 검증
  * - 종료 제출(finish): COMPLETE 전환 검증
  * </p>
@@ -58,7 +61,7 @@ class MatchingRecordTest {
     }
 
     @Test
-    @DisplayName("작업 시작 시 workStartAt이 기록된다")
+    @DisplayName("작업 시작 시 INPROGRESS로 전환되고 workStartAt이 기록된다")
     void startWork_SetsWorkStartAt() {
         // given - CONFIRM 상태의 배정 기록 생성
         MatchingRecord record = new MatchingRecord(idGenerator.generate(), 1L, 10L, MatchingMode.EFFICIENCY_TYPE);
@@ -66,7 +69,8 @@ class MatchingRecordTest {
         // when - 작업 시작
         record.startWork();
 
-        // then - workStartAt이 null이 아닌 현재 시각으로 기록되어야 한다
+        // then - 상태가 진행 중으로 전환되고 workStartAt이 null이 아닌 현재 시각으로 기록되어야 한다
+        assertEquals(MatchingStatus.INPROGRESS, record.getStatus());
         assertNotNull(record.getWorkStartAt());
     }
 
@@ -79,6 +83,22 @@ class MatchingRecordTest {
 
         // when & then - 중복 시작 시도 시 IllegalStateException 발생
         assertThrows(IllegalStateException.class, record::startWork);
+    }
+
+    @Test
+    @DisplayName("workStartAt은 있지만 상태가 CONFIRM인 기존 데이터는 INPROGRESS로 보정된다")
+    void startWork_RepairsLegacyStartedConfirmRecord() {
+        // given - 이전 로직에서 workStartAt만 찍히고 상태가 CONFIRM으로 남은 배정 기록
+        MatchingRecord record = new MatchingRecord(idGenerator.generate(), 1L, 10L, MatchingMode.EFFICIENCY_TYPE);
+        LocalDateTime startedAt = LocalDateTime.now().minusMinutes(10);
+        ReflectionTestUtils.setField(record, "workStartAt", startedAt);
+
+        // when
+        record.startWork();
+
+        // then - 기존 시작 시각은 유지하고 상태만 진행 중으로 보정한다
+        assertEquals(MatchingStatus.INPROGRESS, record.getStatus());
+        assertEquals(startedAt, record.getWorkStartAt());
     }
 
     @Test
