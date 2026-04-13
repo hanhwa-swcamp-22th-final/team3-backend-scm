@@ -33,3 +33,6 @@ mybatis:
 
 admin:
   url: ${ADMIN_URL:http://localhost:8080}
+
+hr:
+  url: ${HR_URL:http://localhost:8081}

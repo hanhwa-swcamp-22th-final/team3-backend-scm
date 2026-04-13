@@ -6,6 +6,7 @@ import com.ohgiraffers.team3backendscm.scm.query.dto.response.FacilityHistoryDto
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.FacilitySummaryDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.FacilityTrendsDto;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -23,6 +24,14 @@ public interface FacilityMapper {
      * @return 설비 기본 정보 목록
      */
     List<FacilityDto> findFacilities();
+
+    /**
+     * 주어진 팀원 ID 목록에 속한 직원이 현재 배치된 설비 목록을 조회한다.
+     *
+     * @param employeeIds 팀원 employee_id 목록
+     * @return 팀원 배치 설비 목록
+     */
+    List<FacilityDto> findTeamFacilities(@Param("employeeIds") List<Long> employeeIds);
 
     /**
      * 특정 설비의 이벤트 이력(장애, 점검, 교체 등)을 조회한다.

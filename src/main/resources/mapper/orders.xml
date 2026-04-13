@@ -5,20 +5,24 @@
 <mapper namespace="com.ohgiraffers.team3backendscm.scm.query.mapper.OrderMapper">
 
     <resultMap id="OrderReadDtoMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.OrderReadDto">
-        <result property="orderNumber"  column="order_no"/>
-        <result property="itemName"     column="product_name"/>
-        <result property="status"       column="order_status"/>
-        <result property="dueDate"      column="order_deadline"/>
-        <result property="technicianId" column="employee_id"/>
+        <id     property="orderId"         column="order_id"/>
+        <result property="orderNumber"     column="order_no"/>
+        <result property="itemName"        column="product_name"/>
+        <result property="status"          column="order_status"/>
+        <result property="dueDate"         column="order_deadline"/>
+        <result property="technicianId"    column="employee_id"/>
+        <result property="difficultyGrade" column="difficulty_grade"/>
     </resultMap>
 
     <!-- 주문 목록 조회 (status·difficultyGrade·keyword 필터) -->
     <select id="findOrders" parameterType="com.ohgiraffers.team3backendscm.scm.query.dto.request.OrderQueryRequest"
             resultMap="OrderReadDtoMap">
-        SELECT o.order_no,
+        SELECT o.order_id,
+               o.order_no,
                p.product_name,
                o.order_status,
                o.order_deadline,
+               o.difficulty_grade,
                mr.employee_id
         FROM orders o
         JOIN product p ON o.product_id = p.product_id
@@ -135,10 +139,12 @@
 
     <!-- 긴급 주문 목록 조회 (납기 3일 이내, 미배정 포함) -->
     <select id="findUrgentOrders" resultMap="OrderReadDtoMap">
-        SELECT o.order_no,
+        SELECT o.order_id,
+               o.order_no,
                p.product_name,
                o.order_status,
                o.order_deadline,
+               o.difficulty_grade,
                mr.employee_id
         FROM orders o
         JOIN product p ON o.product_id = p.product_id
@@ -152,10 +158,12 @@
 
     <!-- 미배정 주문 목록 조회 (ANALYZED 상태 — OCSA 분석 완료 후 기술자 미배정) -->
     <select id="findUnassignedOrders" resultMap="OrderReadDtoMap">
-        SELECT o.order_no,
+        SELECT o.order_id,
+               o.order_no,
                p.product_name,
                o.order_status,
                o.order_deadline,
+               o.difficulty_grade,
                NULL AS employee_id
         FROM orders o
         JOIN product p ON o.product_id = p.product_id

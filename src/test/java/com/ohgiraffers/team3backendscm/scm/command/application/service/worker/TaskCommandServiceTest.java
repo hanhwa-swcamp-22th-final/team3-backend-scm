@@ -35,7 +35,7 @@ import static org.mockito.Mockito.verify;
  *
  * <p>테스트 전략: @ExtendWith(MockitoExtension) — Mockito로 Repository를 모킹하여
  * 서비스 로직만 순수하게 검증한다.
- * - 작업 시작(startTask): workStartAt 기록 및 저장 검증
+ * - 작업 시작(startTask): INPROGRESS 전환, workStartAt 기록 및 저장 검증
  * - 작업 임시저장(finishDraft): workEndAt·comment 기록 및 저장 검증
  * - 작업 종료 제출(finish): COMPLETE 전환 + 주문 COMPLETED 처리 검증
  * - 예외: 존재하지 않는 배정 기록 ID 처리 검증
@@ -60,7 +60,7 @@ class TaskCommandServiceTest {
     class StartTask {
 
         @Test
-        @DisplayName("성공: 배정 기록에 workStartAt이 기록되고 저장된다")
+        @DisplayName("성공: 배정 기록이 INPROGRESS로 전환되고 workStartAt이 기록된다")
         void startTask_Success() {
             // given
             Long taskId = idGenerator.generate();
@@ -70,7 +70,8 @@ class TaskCommandServiceTest {
             // when
             taskCommandService.startTask(taskId);
 
-            // then - workStartAt 이 현재 시각으로 기록되고 저장되어야 한다
+            // then - 상태가 진행 중으로 전환되고 workStartAt 이 현재 시각으로 기록되어야 한다
+            assertEquals(MatchingStatus.INPROGRESS, record.getStatus());
             assertNotNull(record.getWorkStartAt());
             verify(matchingRecordRepository, times(1)).save(any(MatchingRecord.class));
         }

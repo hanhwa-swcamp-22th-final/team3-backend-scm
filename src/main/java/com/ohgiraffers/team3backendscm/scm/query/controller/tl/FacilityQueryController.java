@@ -77,6 +77,17 @@ public class FacilityQueryController {
     }
 
     /**
+     * 로그인한 TL의 팀원이 배치된 설비 목록을 조회한다.
+     *
+     * @return 팀원 배치 설비 목록
+     */
+    @GetMapping("/facilities/my-team")
+    public ResponseEntity<ApiResponse<List<FacilityDto>>> getMyTeamFacilities() {
+        List<FacilityDto> facilities = facilityQueryService.getMyTeamFacilities();
+        return ResponseEntity.ok(ApiResponse.success(facilities));
+    }
+
+    /**
      * 전체 설비 운영 요약을 조회한다.
      *
      * @return 설비 운영 요약 DTO

@@ -113,11 +113,16 @@ public class MatchingRecord {
         this.status = MatchingStatus.REJECT;
     }
 
-    /** 작업 시작 시 workStartAt 을 현재 시각으로 설정한다. 이미 시작된 경우 예외. */
+    /** 작업 시작 시 INPROGRESS로 전환하고 workStartAt 을 현재 시각으로 설정한다. 이미 시작된 경우 예외. */
     public void startWork() {
         if (this.workStartAt != null) {
+            if (this.status == MatchingStatus.CONFIRM) {
+                this.status = MatchingStatus.INPROGRESS;
+                return;
+            }
             throw new IllegalStateException("이미 시작된 작업입니다.");
         }
+        this.status = MatchingStatus.INPROGRESS;
         this.workStartAt = LocalDateTime.now();
     }
 

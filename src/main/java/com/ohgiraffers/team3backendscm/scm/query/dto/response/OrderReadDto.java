@@ -16,11 +16,13 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class OrderReadDto {
 
+    private Long orderId;           // 주문 PK
     private String orderNumber;    // 주문 번호
     private String itemName;       // 상품(품목) 명칭
     private OrderStatus status;    // 주문 처리 상태
     private LocalDate dueDate;     // 납기 마감일
     private Long technicianId;     // 배정된 기술자 ID (미배정 시 null)
+    private String difficultyGrade; // OCSA 난이도 등급 (D1~D5, 분석 전 null)
 
     /**
      * 테스트용 간략 생성자. 납기일·기술자 ID 없이 상태만 지정한다.

@@ -10,6 +10,7 @@ public enum MatchingStatus {
     APPLY,      // 지원 (기술자가 직접 배정에 지원한 상태)
     APPROVE,    // 승인 (팀 리더가 배정된 건을 승인한 상태)
     CONFIRM,    // 배정 확정 (최종 배정이 확정된 상태)
+    INPROGRESS, // 진행 중 (작업자가 작업을 시작한 상태)
     REJECT,     // 거절 (배정을 거절한 상태)
     COMPLETE    // 완료 (작업이 완료된 상태)
 }
