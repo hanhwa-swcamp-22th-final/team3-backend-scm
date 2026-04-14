@@ -11,6 +11,7 @@
         <result property="status"          column="order_status"/>
         <result property="dueDate"         column="order_deadline"/>
         <result property="technicianId"    column="employee_id"/>
+        <result property="technicianName"  column="employee_name"/>
         <result property="difficultyGrade" column="difficulty_grade"/>
     </resultMap>
 
@@ -23,12 +24,14 @@
                o.order_status,
                o.order_deadline,
                o.difficulty_grade,
-               mr.employee_id
+               mr.employee_id,
+               e.employee_name
         FROM orders o
         JOIN product p ON o.product_id = p.product_id
         LEFT JOIN matching_record mr
                ON o.order_id = mr.order_id
-              AND mr.matching_status = 'CONFIRM'
+              AND mr.matching_status IN ('CONFIRM', 'INPROGRESS', 'COMPLETE')
+        LEFT JOIN employee e ON mr.employee_id = e.employee_id
         <where>
             <if test="status != null">
                 AND o.order_status = #{status}
@@ -145,12 +148,14 @@
                o.order_status,
                o.order_deadline,
                o.difficulty_grade,
-               mr.employee_id
+               mr.employee_id,
+               e.employee_name
         FROM orders o
         JOIN product p ON o.product_id = p.product_id
         LEFT JOIN matching_record mr
                ON o.order_id = mr.order_id
-              AND mr.matching_status = 'CONFIRM'
+              AND mr.matching_status IN ('CONFIRM', 'INPROGRESS', 'COMPLETE')
+        LEFT JOIN employee e ON mr.employee_id = e.employee_id
         WHERE o.order_deadline &lt;= DATE_ADD(CURDATE(), INTERVAL 3 DAY)
           AND o.order_status != 'COMPLETED'
         ORDER BY o.order_deadline ASC
@@ -164,10 +169,17 @@
                o.order_status,
                o.order_deadline,
                o.difficulty_grade,
-               NULL AS employee_id
+               NULL AS employee_id,
+               NULL AS employee_name
         FROM orders o
         JOIN product p ON o.product_id = p.product_id
         WHERE o.order_status = 'ANALYZED'
+          AND NOT EXISTS (
+              SELECT 1
+              FROM matching_record mr
+              WHERE mr.order_id = o.order_id
+                AND mr.matching_status IN ('CONFIRM', 'INPROGRESS', 'COMPLETE')
+          )
         ORDER BY o.order_deadline ASC
     </select>
 

@@ -1,5 +1,8 @@
 package com.ohgiraffers.team3backendscm.scm.query.service.tl;
 
+import com.ohgiraffers.team3backendscm.infrastructure.client.HrClient;
+import com.ohgiraffers.team3backendscm.infrastructure.client.dto.HrTeamMemberResponse;
+import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentCandidateDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentDetailDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentSummaryDto;
 import com.ohgiraffers.team3backendscm.scm.query.mapper.AssignmentMapper;
@@ -16,6 +19,8 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -24,6 +29,8 @@ class AssignmentQueryServiceTest {
 
     @Mock
     private AssignmentMapper assignmentMapper;
+    @Mock
+    private HrClient hrClient;
 
     @InjectMocks
     private AssignmentQueryService assignmentQueryService;
@@ -54,16 +61,37 @@ class AssignmentQueryServiceTest {
     }
 
     @Test
-    @DisplayName("배정 후보 조회 시 Mapper가 1회 호출된다")
-    void getCandidates_CallsMapperOnce() {
+    @DisplayName("배정 후보 조회 시 HR 팀원 목록 기준으로 후보 Mapper를 호출한다")
+    void getCandidates_CallsMapperWithTeamMembers() {
         // given
-        given(assignmentMapper.findCandidates()).willReturn(List.of());
+        HrTeamMemberResponse member = mock(HrTeamMemberResponse.class);
+        given(member.getEmployeeId()).willReturn(10L);
+        given(hrClient.getTeamMembers()).willReturn(List.of(member));
+        given(assignmentMapper.findCandidatesByEmployeeIds(List.of(10L), 100L))
+                .willReturn(List.of(new AssignmentCandidateDto()));
 
         // when
-        assignmentQueryService.getCandidates();
+        assignmentQueryService.getCandidates(100L);
 
         // then
-        verify(assignmentMapper, times(1)).findCandidates();
+        verify(assignmentMapper, times(1)).findCandidatesByEmployeeIds(List.of(10L), 100L);
+        verify(assignmentMapper, never()).findCandidates();
+    }
+
+    @Test
+    @DisplayName("배정 후보 조회 시 HR 팀원 목록이 비어 있으면 빈 목록을 반환하고 Mapper를 호출하지 않는다")
+    void getCandidates_ReturnsEmpty_WhenNoTeamMembers() {
+        // given
+        given(hrClient.getTeamMembers()).willReturn(List.of());
+
+        // when
+        assignmentQueryService.getCandidates(100L);
+
+        // then
+        verify(assignmentMapper, never()).findCandidatesByEmployeeIds(
+                org.mockito.ArgumentMatchers.anyList(),
+                org.mockito.ArgumentMatchers.any()
+        );
     }
 
     @Test

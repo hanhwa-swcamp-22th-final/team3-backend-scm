@@ -56,6 +56,7 @@
         <result property="tier"             column="employee_tier"/>
         <result property="score"            column="total_points"/>
         <result property="suitabilityScore" column="capability_index"/>
+        <result property="matchingMode"     column="matching_mode"/>
     </resultMap>
 
     <select id="findCandidates" resultMap="CandidateMap">
@@ -64,7 +65,8 @@
             e.employee_name,
             e.employee_tier,
             s.total_points,
-            s.capability_index
+            s.capability_index,
+            'EFFICIENCY_TYPE' AS matching_mode
         FROM employee e
         LEFT JOIN score s ON e.employee_id = s.employee_id
         WHERE e.employee_role = 'WORKER'
@@ -72,9 +74,47 @@
         ORDER BY s.total_points DESC
     </select>
 
+    <select id="findCandidatesByEmployeeIds" resultMap="CandidateMap">
+        SELECT
+            e.employee_id,
+            e.employee_name,
+            e.employee_tier,
+            s.total_points,
+            s.capability_index,
+            CASE
+                WHEN o.difficulty_grade IS NULL THEN 'EFFICIENCY_TYPE'
+                WHEN
+                    CASE o.difficulty_grade
+                        WHEN 'D5' THEN 3
+                        WHEN 'D4' THEN 2
+                        WHEN 'D3' THEN 1
+                        ELSE 0
+                    END >
+                    CASE e.employee_tier
+                        WHEN 'S' THEN 3
+                        WHEN 'A' THEN 2
+                        WHEN 'B' THEN 1
+                        ELSE 0
+                    END
+                THEN 'GROWTH_TYPE'
+                ELSE 'EFFICIENCY_TYPE'
+            END AS matching_mode
+        FROM employee e
+        LEFT JOIN score s ON e.employee_id = s.employee_id
+        LEFT JOIN orders o ON o.order_id = #{orderId}
+        WHERE e.employee_role = 'WORKER'
+          AND e.employee_status = 'ACTIVE'
+          AND e.employee_id IN
+          <foreach collection="employeeIds" item="id" open="(" separator="," close=")">
+              #{id}
+          </foreach>
+        ORDER BY s.total_points DESC
+    </select>
+
     <!-- ===== findSummary ===== -->
     <resultMap id="SummaryMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentSummaryDto">
         <result property="todayAssignedCount" column="today_assigned_count"/>
+        <result property="todayCompletedCount" column="today_completed_count"/>
         <result property="unassignedCount"    column="unassigned_count"/>
         <result property="accuracy"           column="accuracy"/>
         <result property="activeWorkerCount"  column="active_worker_count"/>
@@ -83,7 +123,21 @@
     <select id="findSummary" resultMap="SummaryMap">
         SELECT
             SUM(CASE WHEN DATE(mr.created_at) = CURDATE() THEN 1 ELSE 0 END) AS today_assigned_count,
-            SUM(CASE WHEN o.order_status = 'ANALYZED' THEN 1 ELSE 0 END)     AS unassigned_count,
+            SUM(CASE
+                WHEN mr.matching_status = 'COMPLETE'
+                 AND DATE(mr.work_end_at) = CURDATE()
+                THEN 1 ELSE 0
+            END) AS today_completed_count,
+            SUM(CASE
+                WHEN o.order_status = 'ANALYZED'
+                 AND NOT EXISTS (
+                     SELECT 1
+                     FROM matching_record active_mr
+                     WHERE active_mr.order_id = o.order_id
+                       AND active_mr.matching_status IN ('CONFIRM', 'INPROGRESS', 'COMPLETE')
+                 )
+                THEN 1 ELSE 0
+            END) AS unassigned_count,
             ROUND(
                 SUM(CASE WHEN mr.matching_status = 'CONFIRM' THEN 1 ELSE 0 END) * 100.0
                 / NULLIF(COUNT(mr.matching_record_id), 0),
@@ -120,7 +174,7 @@
             mr.employee_id,
             e.employee_name,
             e.employee_tier,
-            DATE(mr.created_at) AS assigned_date,
+            COALESCE(DATE(mr.work_start_at), DATE(mr.created_at)) AS assigned_date,
             mr.matching_status,
             o.order_no,
             o.order_status,
@@ -129,12 +183,24 @@
         FROM matching_record mr
         JOIN orders o ON mr.order_id = o.order_id
         JOIN employee e ON mr.employee_id = e.employee_id
-        JOIN worker_deployment wd ON mr.employee_id = wd.employee_id
-            AND DATE(mr.created_at) BETWEEN wd.start_date AND COALESCE(wd.end_date, CURDATE())
-        JOIN equipment eq ON wd.equipment_id = eq.equipment_id
-        JOIN equipment_process ep ON eq.equipment_process_id = ep.equipment_process_id
-        JOIN factory_line fl ON ep.factory_line_id = fl.factory_line_id
-        ORDER BY fl.factory_line_id, assigned_date
+        LEFT JOIN worker_deployment wd ON wd.worker_deployment_id = (
+            SELECT wd2.worker_deployment_id
+            FROM worker_deployment wd2
+            WHERE wd2.employee_id = mr.employee_id
+            ORDER BY
+                CASE
+                    WHEN wd2.start_date &lt;= CURDATE()
+                     AND (wd2.end_date IS NULL OR wd2.end_date >= CURDATE())
+                    THEN 0 ELSE 1
+                END,
+                wd2.start_date DESC
+            LIMIT 1
+        )
+        LEFT JOIN equipment eq ON wd.equipment_id = eq.equipment_id
+        LEFT JOIN equipment_process ep ON eq.equipment_process_id = ep.equipment_process_id
+        LEFT JOIN factory_line fl ON ep.factory_line_id = fl.factory_line_id
+        WHERE mr.matching_status != 'REJECT'
+        ORDER BY fl.factory_line_id, COALESCE(mr.work_start_at, mr.created_at) DESC
     </select>
 
     <!-- ===== findRebalance ===== -->

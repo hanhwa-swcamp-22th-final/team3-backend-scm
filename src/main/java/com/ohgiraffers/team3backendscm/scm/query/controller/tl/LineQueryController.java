@@ -3,6 +3,7 @@ package com.ohgiraffers.team3backendscm.scm.query.controller.tl;
 import com.ohgiraffers.team3backendscm.common.dto.ApiResponse;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.LineSummaryDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.LineStatusDto;
+import com.ohgiraffers.team3backendscm.scm.query.dto.response.LineWorkerDto;
 import com.ohgiraffers.team3backendscm.scm.query.service.tl.LineQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -65,5 +66,17 @@ public class LineQueryController {
     public ResponseEntity<ApiResponse<LineStatusDto>> getLineStatus(@PathVariable Long lineId) {
         LineStatusDto status = lineQueryService.getLineStatus(lineId);
         return ResponseEntity.ok(ApiResponse.success(status));
+    }
+
+    /**
+     * 특정 라인에 배치된 작업자 목록을 조회한다.
+     *
+     * @param lineId 조회할 라인 ID
+     * @return 라인 작업자 목록
+     */
+    @GetMapping("/lines/{lineId}/workers")
+    public ResponseEntity<ApiResponse<List<LineWorkerDto>>> getLineWorkers(@PathVariable Long lineId) {
+        List<LineWorkerDto> workers = lineQueryService.getLineWorkers(lineId);
+        return ResponseEntity.ok(ApiResponse.success(workers));
     }
 }

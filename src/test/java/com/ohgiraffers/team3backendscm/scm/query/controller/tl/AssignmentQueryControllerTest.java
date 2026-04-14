@@ -51,10 +51,10 @@ class AssignmentQueryControllerTest {
     @DisplayName("GET /api/v1/scm/assignments/candidates → 200 OK")
     void getCandidates_Return200() throws Exception {
         // given
-        given(assignmentQueryService.getCandidates()).willReturn(List.of());
+        given(assignmentQueryService.getCandidates(100L)).willReturn(List.of());
 
         // when / then
-        mockMvc.perform(get("/api/v1/scm/assignments/candidates"))
+        mockMvc.perform(get("/api/v1/scm/assignments/candidates").param("orderId", "100"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }

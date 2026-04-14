@@ -29,6 +29,7 @@
             AND wd.worker_deployment_role = 'PRIMARY'
             AND (wd.end_date IS NULL OR wd.end_date >= CURDATE())
         LEFT JOIN employee emp ON wd.employee_id = emp.employee_id
+        WHERE COALESCE(e.is_deleted, false) = false
     </select>
 
     <!-- ===== findTeamFacilities ===== -->
@@ -51,25 +52,31 @@
             </foreach>
             AND (wd.end_date IS NULL OR wd.end_date >= CURDATE())
         JOIN employee emp ON wd.employee_id = emp.employee_id
+        WHERE COALESCE(e.is_deleted, false) = false
     </select>
 
     <!-- ===== findFacilityHistory ===== -->
     <resultMap id="FacilityHistoryDtoMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.FacilityHistoryDto">
-        <result property="eventId"     column="environment_event_id"/>
-        <result property="eventType"   column="env_deviation_type"/>
-        <result property="occurredAt"  column="env_detected_at"/>
+        <result property="eventId"     column="event_id"/>
+        <result property="eventType"   column="event_type"/>
+        <result property="occurredAt"  column="occurred_at"/>
         <result property="description" column="description"/>
     </resultMap>
 
     <select id="findFacilityHistory" resultMap="FacilityHistoryDtoMap">
         SELECT
-            ee.environment_event_id,
-            ee.env_deviation_type,
-            ee.env_detected_at,
-            CONCAT('T:', ee.env_temperature, ' H:', ee.env_humidity, ' P:', ee.env_particle_cnt) AS description
-        FROM environment_event ee
-        WHERE ee.equipment_id = #{facilityId}
-        ORDER BY ee.env_detected_at DESC
+            ml.maintenance_log_id AS event_id,
+            ml.maintenance_type AS event_type,
+            CAST(CONCAT(ml.maintenance_date, ' 00:00:00') AS DATETIME) AS occurred_at,
+            CONCAT(
+                '점검결과 ', ml.maintenance_result,
+                ' · 점수 ', COALESCE(CAST(ml.maintenance_score AS CHAR), '-'),
+                ' · ETA Δ ', COALESCE(CAST(ml.eta_maint_delta AS CHAR), '-')
+            ) AS description
+        FROM maintenance_log ml
+        WHERE ml.equipment_id = #{facilityId}
+        ORDER BY ml.maintenance_date DESC, ml.created_at DESC
+        LIMIT 10
     </select>
 
     <!-- ===== findFacilityDeployments ===== -->
@@ -107,6 +114,7 @@
             SUM(CASE WHEN equipment_status = 'UNDER_INSPECTION' THEN 1 ELSE 0 END) AS under_inspection_count,
             SUM(CASE WHEN equipment_status = 'DISPOSED'         THEN 1 ELSE 0 END) AS disposed_count
         FROM equipment
+        WHERE COALESCE(is_deleted, false) = false
     </select>
 
     <!-- ===== findFacilityTrends ===== -->
