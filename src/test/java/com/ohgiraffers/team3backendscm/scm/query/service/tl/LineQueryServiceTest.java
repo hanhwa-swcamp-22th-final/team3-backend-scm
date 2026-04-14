@@ -77,20 +77,19 @@ class LineQueryServiceTest {
     }
 
     @Test
-    @DisplayName("라인 작업자 조회 시 팀원 기준 결과가 비어 있으면 전체 라인 작업자로 폴백한다")
-    void getLineWorkers_FallbacksToAllLineWorkers_WhenTeamWorkersEmpty() {
+    @DisplayName("라인 작업자 조회 시 팀원 기준 결과가 비어 있어도 전체 라인 작업자로 폴백하지 않는다")
+    void getLineWorkers_DoesNotFallbackToAllLineWorkers_WhenTeamWorkersEmpty() {
         // given
         HrTeamMemberResponse member = mock(HrTeamMemberResponse.class);
         given(member.getEmployeeId()).willReturn(10L);
         given(hrClient.getTeamMembers()).willReturn(List.of(member));
         given(lineMapper.findLineWorkersByEmployeeIds(1L, List.of(10L))).willReturn(List.of());
-        given(lineMapper.findLineWorkers(1L)).willReturn(List.of());
 
         // when
         lineQueryService.getLineWorkers(1L);
 
         // then
         verify(lineMapper, times(1)).findLineWorkersByEmployeeIds(1L, List.of(10L));
-        verify(lineMapper, times(1)).findLineWorkers(1L);
+        verify(lineMapper, never()).findLineWorkers(1L);
     }
 }

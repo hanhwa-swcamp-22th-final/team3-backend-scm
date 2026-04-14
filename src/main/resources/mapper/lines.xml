@@ -133,6 +133,8 @@
         JOIN equipment eq ON ep.equipment_process_id = eq.equipment_process_id
             AND COALESCE(eq.is_deleted, false) = false
         JOIN worker_deployment wd ON eq.equipment_id = wd.equipment_id
+            AND wd.start_date &lt;= CURDATE()
+            AND (wd.end_date IS NULL OR wd.end_date >= CURDATE())
         JOIN employee e ON wd.employee_id = e.employee_id
             AND e.employee_role = 'WORKER'
             AND e.employee_status = 'ACTIVE'

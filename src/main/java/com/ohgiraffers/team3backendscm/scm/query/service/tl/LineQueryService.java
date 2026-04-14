@@ -75,10 +75,9 @@ public class LineQueryService {
                     .map(m -> m.getEmployeeId())
                     .toList();
             if (employeeIds.isEmpty()) {
-                return lineMapper.findLineWorkers(lineId);
+                return List.of();
             }
-            List<LineWorkerDto> teamWorkers = lineMapper.findLineWorkersByEmployeeIds(lineId, employeeIds);
-            return teamWorkers.isEmpty() ? lineMapper.findLineWorkers(lineId) : teamWorkers;
+            return lineMapper.findLineWorkersByEmployeeIds(lineId, employeeIds);
         } catch (Exception e) {
             log.warn("HR 팀원 조회 실패, 전체 라인 작업자로 폴백: {}", e.getMessage());
             return lineMapper.findLineWorkers(lineId);
