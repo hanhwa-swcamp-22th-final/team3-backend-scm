@@ -1,6 +1,7 @@
 package com.ohgiraffers.team3backendscm.infrastructure.kafka.config;
 
 import com.ohgiraffers.team3backendscm.infrastructure.kafka.dto.AssignmentSnapshotEvent;
+import com.ohgiraffers.team3backendscm.infrastructure.kafka.dto.MissionProgressEvent;
 import com.ohgiraffers.team3backendscm.infrastructure.kafka.dto.OrderDifficultyAnalyzedEvent;
 import com.ohgiraffers.team3backendscm.infrastructure.kafka.dto.OrderDifficultySnapshotEvent;
 import com.ohgiraffers.team3backendscm.infrastructure.kafka.dto.OrderRegisteredEvent;
@@ -76,6 +77,21 @@ public class OrderKafkaConfig {
     @Bean
     public KafkaTemplate<String, AssignmentSnapshotEvent> assignmentSnapshotKafkaTemplate() {
         return new KafkaTemplate<>(assignmentSnapshotProducerFactory());
+    }
+
+    @Bean
+    public ProducerFactory<String, MissionProgressEvent> missionProgressProducerFactory() {
+        Map<String, Object> config = new HashMap<>();
+        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        config.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
+        return new DefaultKafkaProducerFactory<>(config);
+    }
+
+    @Bean
+    public KafkaTemplate<String, MissionProgressEvent> missionProgressKafkaTemplate() {
+        return new KafkaTemplate<>(missionProgressProducerFactory());
     }
 
     @Bean

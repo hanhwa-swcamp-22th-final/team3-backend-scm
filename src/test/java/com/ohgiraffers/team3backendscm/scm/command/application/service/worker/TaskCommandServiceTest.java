@@ -1,7 +1,9 @@
 package com.ohgiraffers.team3backendscm.scm.command.application.service.worker;
 
 import com.ohgiraffers.team3backendscm.common.idgenerator.TimeBasedIdGenerator;
+import com.ohgiraffers.team3backendscm.infrastructure.kafka.publisher.MissionProgressEventPublisher;
 import com.ohgiraffers.team3backendscm.scm.command.application.dto.request.TaskFinishRequest;
+import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.DifficultyGrade;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingMode;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingRecord;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingStatus;
@@ -51,6 +53,9 @@ class TaskCommandServiceTest {
 
     @Mock
     private OrderRepository orderRepository;
+
+    @Mock
+    private MissionProgressEventPublisher missionProgressEventPublisher;
 
     @InjectMocks
     private TaskCommandService taskCommandService;
@@ -145,9 +150,30 @@ class TaskCommandServiceTest {
             // then - MatchingRecord와 Order 각 1회씩 저장 확인
             verify(matchingRecordRepository, times(1)).save(any(MatchingRecord.class));
             verify(orderRepository, times(1)).save(any(Order.class));
+            verify(missionProgressEventPublisher, never()).publishHighDifficultyWorkAfterCommit(any());
             // 상태 전환 확인
             assertEquals(MatchingStatus.COMPLETE, record.getStatus());
             assertEquals(OrderStatus.COMPLETED, order.getStatus());
+        }
+
+        @Test
+        @DisplayName("성공: D4 이상 주문 완료 시 고난도 작업 미션 진행 이벤트를 발행한다")
+        void finish_PublishMissionProgress_WhenHighDifficulty() {
+            // given
+            Long taskId = idGenerator.generate();
+            Long orderId = idGenerator.generate();
+            Long employeeId = 10L;
+            MatchingRecord record = new MatchingRecord(taskId, orderId, employeeId, MatchingMode.EFFICIENCY_TYPE);
+            Order order = new Order(orderId, "ORD-0402", OrderStatus.INPROGRESS, LocalDate.now().plusDays(5), DifficultyGrade.D4);
+
+            given(matchingRecordRepository.findById(taskId)).willReturn(Optional.of(record));
+            given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+
+            // when
+            taskCommandService.finish(taskId, new TaskFinishRequest("최종 코멘트"));
+
+            // then
+            verify(missionProgressEventPublisher, times(1)).publishHighDifficultyWorkAfterCommit(employeeId);
         }
 
         @Test
