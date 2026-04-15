@@ -13,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -58,8 +59,9 @@ public class AssignmentQueryController {
      * @return 후보 기술자 목록 (보유 티어, OCSA 점수, 적합도 포함)
      */
     @GetMapping("/assignments/candidates")
-    public ResponseEntity<ApiResponse<List<AssignmentCandidateDto>>> getCandidates() {
-        List<AssignmentCandidateDto> candidates = assignmentQueryService.getCandidates();
+    public ResponseEntity<ApiResponse<List<AssignmentCandidateDto>>> getCandidates(
+            @RequestParam(required = false) Long orderId) {
+        List<AssignmentCandidateDto> candidates = assignmentQueryService.getCandidates(orderId);
         return ResponseEntity.ok(ApiResponse.success(candidates));
     }
 

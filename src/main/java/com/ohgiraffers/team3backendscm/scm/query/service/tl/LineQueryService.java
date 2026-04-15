@@ -3,6 +3,7 @@ package com.ohgiraffers.team3backendscm.scm.query.service.tl;
 import com.ohgiraffers.team3backendscm.infrastructure.client.HrClient;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.LineSummaryDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.LineStatusDto;
+import com.ohgiraffers.team3backendscm.scm.query.dto.response.LineWorkerDto;
 import com.ohgiraffers.team3backendscm.scm.query.mapper.LineMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -59,5 +60,27 @@ public class LineQueryService {
      */
     public LineStatusDto getLineStatus(Long lineId) {
         return lineMapper.findLineStatus(lineId);
+    }
+
+    /**
+     * 특정 라인에 배치된 작업자 목록을 조회한다.
+     * TL 화면에서는 HR 팀원 목록으로 범위를 좁히고, HR 호출 실패 시 전체 라인 작업자로 폴백한다.
+     *
+     * @param lineId 조회할 라인 ID
+     * @return 라인 작업자 목록
+     */
+    public List<LineWorkerDto> getLineWorkers(Long lineId) {
+        try {
+            List<Long> employeeIds = hrClient.getTeamMembers().stream()
+                    .map(m -> m.getEmployeeId())
+                    .toList();
+            if (employeeIds.isEmpty()) {
+                return List.of();
+            }
+            return lineMapper.findLineWorkersByEmployeeIds(lineId, employeeIds);
+        } catch (Exception e) {
+            log.warn("HR 팀원 조회 실패, 전체 라인 작업자로 폴백: {}", e.getMessage());
+            return lineMapper.findLineWorkers(lineId);
+        }
     }
 }

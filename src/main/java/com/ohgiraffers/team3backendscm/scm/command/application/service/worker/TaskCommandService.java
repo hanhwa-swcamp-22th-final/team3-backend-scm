@@ -1,5 +1,7 @@
 package com.ohgiraffers.team3backendscm.scm.command.application.service.worker;
 
+import com.ohgiraffers.team3backendscm.infrastructure.kafka.publisher.MissionProgressEventPublisher;
+import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.DifficultyGrade;
 import com.ohgiraffers.team3backendscm.scm.command.application.dto.request.TaskFinishRequest;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingRecord;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.Order;
@@ -17,6 +19,7 @@ public class TaskCommandService {
 
     private final MatchingRecordRepository matchingRecordRepository;
     private final OrderRepository orderRepository;
+    private final MissionProgressEventPublisher missionProgressEventPublisher;
 
     @Transactional
     public void startTask(Long taskId) {
@@ -49,5 +52,13 @@ public class TaskCommandService {
 
         order.complete();
         orderRepository.save(order);
+
+        if (isHighDifficulty(order.getDifficultyGrade())) {
+            missionProgressEventPublisher.publishHighDifficultyWorkAfterCommit(record.getEmployeeId());
+        }
+    }
+
+    private boolean isHighDifficulty(DifficultyGrade difficultyGrade) {
+        return difficultyGrade == DifficultyGrade.D4 || difficultyGrade == DifficultyGrade.D5;
     }
 }

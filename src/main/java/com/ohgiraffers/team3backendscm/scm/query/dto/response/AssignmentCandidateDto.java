@@ -22,4 +22,5 @@ public class AssignmentCandidateDto {
     private String tier;              // 보유 티어 (S / A / B / C)
     private BigDecimal score;         // 기술자의 OCSA 평가 점수
     private BigDecimal suitabilityScore; // 해당 주문에 대한 적합도 점수
+    private String matchingMode;      // 선택 주문 기준 배정 방식 (EFFICIENCY_TYPE / GROWTH_TYPE)
 }

@@ -1,6 +1,7 @@
 package com.ohgiraffers.team3backendscm.scm.command.application.service.tl;
 
 import com.ohgiraffers.team3backendscm.common.idgenerator.IdGenerator;
+import com.ohgiraffers.team3backendscm.infrastructure.client.HrClient;
 import com.ohgiraffers.team3backendscm.scm.command.application.dto.request.AssignRequest;
 import com.ohgiraffers.team3backendscm.scm.command.application.dto.request.ReassignRequest;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingMode;
@@ -9,7 +10,6 @@ import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.Order;
 import com.ohgiraffers.team3backendscm.scm.command.domain.repository.MatchingRecordRepository;
 import com.ohgiraffers.team3backendscm.scm.command.domain.repository.OrderRepository;
 import com.ohgiraffers.team3backendscm.scm.query.mapper.EmployeeMapper;
-import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +39,7 @@ public class AssignmentCommandService {
     private final IdGenerator idGenerator;
     private final EmployeeMapper employeeMapper;
     private final AssignmentSnapshotCommandService assignmentSnapshotCommandService;
+    private final HrClient hrClient;
 
     /**
      * 기술자를 주문에 배정한다. 트랜잭션 내에서 주문 상태 변경과 배정 기록 저장이 원자적으로 처리된다.
@@ -49,6 +50,8 @@ public class AssignmentCommandService {
      */
     @Transactional
     public void assign(AssignRequest request) {
+        validateTeamMember(request.getTechnicianId());
+
         Order order = orderRepository.findById(request.getOrderId())
             .orElseThrow(() -> new NoSuchElementException("Order not found. id=" + request.getOrderId()));
 
@@ -78,6 +81,8 @@ public class AssignmentCommandService {
      */
     @Transactional
     public void reassign(Long matchingRecordId, ReassignRequest request) {
+        validateTeamMember(request.getTechnicianId());
+
         MatchingRecord record = matchingRecordRepository.findById(matchingRecordId)
             .orElseThrow(() -> new NoSuchElementException("Assignment record not found. id=" + matchingRecordId));
 
@@ -114,5 +119,13 @@ public class AssignmentCommandService {
 
         order.cancelAssignment();
         orderRepository.save(order);
+    }
+
+    private void validateTeamMember(Long technicianId) {
+        boolean assignable = hrClient.getTeamMembers().stream()
+                .anyMatch(member -> technicianId.equals(member.getEmployeeId()));
+        if (!assignable) {
+            throw new IllegalArgumentException("본인 부서 소속 팀원에게만 주문을 배정할 수 있습니다.");
+        }
     }
 }

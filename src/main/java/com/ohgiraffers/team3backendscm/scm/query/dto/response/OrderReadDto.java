@@ -22,6 +22,7 @@ public class OrderReadDto {
     private OrderStatus status;    // 주문 처리 상태
     private LocalDate dueDate;     // 납기 마감일
     private Long technicianId;     // 배정된 기술자 ID (미배정 시 null)
+    private String technicianName; // 배정된 기술자 이름 (미배정 시 null)
     private String difficultyGrade; // OCSA 난이도 등급 (D1~D5, 분석 전 null)
 
     /**

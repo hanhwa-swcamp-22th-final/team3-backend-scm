@@ -2,6 +2,7 @@ package com.ohgiraffers.team3backendscm.scm.query.mapper;
 
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.LineSummaryDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.LineStatusDto;
+import com.ohgiraffers.team3backendscm.scm.query.dto.response.LineWorkerDto;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -37,4 +38,24 @@ public interface LineMapper {
      * @return 라인 운영 현황 DTO (없으면 null)
      */
     LineStatusDto findLineStatus(Long lineId);
+
+    /**
+     * 특정 라인에 현재 배치된 작업자 목록을 조회한다.
+     *
+     * @param lineId 조회할 라인 ID
+     * @return 라인 작업자 목록
+     */
+    List<LineWorkerDto> findLineWorkers(@Param("lineId") Long lineId);
+
+    /**
+     * 특정 라인에 현재 배치된 팀원 작업자 목록을 조회한다.
+     *
+     * @param lineId 조회할 라인 ID
+     * @param employeeIds 팀원 employee_id 목록
+     * @return 라인 작업자 목록
+     */
+    List<LineWorkerDto> findLineWorkersByEmployeeIds(
+            @Param("lineId") Long lineId,
+            @Param("employeeIds") List<Long> employeeIds
+    );
 }

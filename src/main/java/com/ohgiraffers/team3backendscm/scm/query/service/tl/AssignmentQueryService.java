@@ -1,5 +1,6 @@
 package com.ohgiraffers.team3backendscm.scm.query.service.tl;
 
+import com.ohgiraffers.team3backendscm.infrastructure.client.HrClient;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentCandidateDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentDetailDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentRebalanceDto;
@@ -21,6 +22,7 @@ import java.util.NoSuchElementException;
 public class AssignmentQueryService {
 
     private final AssignmentMapper assignmentMapper;
+    private final HrClient hrClient;
 
     /**
      * 배정 기록 ID로 배정 상세 정보를 조회한다.
@@ -39,8 +41,14 @@ public class AssignmentQueryService {
      *
      * @return 후보 기술자 목록 (보유 티어, OCSA 점수, 적합도 포함)
      */
-    public List<AssignmentCandidateDto> getCandidates() {
-        return assignmentMapper.findCandidates();
+    public List<AssignmentCandidateDto> getCandidates(Long orderId) {
+        List<Long> teamMemberIds = hrClient.getTeamMembers().stream()
+                .map(member -> member.getEmployeeId())
+                .toList();
+        if (teamMemberIds.isEmpty()) {
+            return List.of();
+        }
+        return assignmentMapper.findCandidatesByEmployeeIds(teamMemberIds, orderId);
     }
 
     /**

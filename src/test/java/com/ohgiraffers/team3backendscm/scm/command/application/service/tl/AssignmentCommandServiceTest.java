@@ -2,9 +2,10 @@ package com.ohgiraffers.team3backendscm.scm.command.application.service.tl;
 
 import com.ohgiraffers.team3backendscm.common.idgenerator.IdGenerator;
 import com.ohgiraffers.team3backendscm.common.idgenerator.TimeBasedIdGenerator;
+import com.ohgiraffers.team3backendscm.infrastructure.client.HrClient;
+import com.ohgiraffers.team3backendscm.infrastructure.client.dto.HrTeamMemberResponse;
 import com.ohgiraffers.team3backendscm.scm.command.application.dto.request.AssignRequest;
 import com.ohgiraffers.team3backendscm.scm.command.application.dto.request.ReassignRequest;
-import com.ohgiraffers.team3backendscm.scm.command.application.service.tl.AssignmentCommandService;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.DifficultyGrade;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingMode;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingRecord;
@@ -24,6 +25,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -32,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -48,6 +51,10 @@ class AssignmentCommandServiceTest {
     private IdGenerator mockIdGenerator;
     @Mock
     private EmployeeMapper employeeMapper;
+    @Mock
+    private HrClient hrClient;
+    @Mock
+    private AssignmentSnapshotCommandService assignmentSnapshotCommandService;
 
     @InjectMocks
     private AssignmentCommandService assignmentCommandService;
@@ -60,6 +67,7 @@ class AssignmentCommandServiceTest {
         @DisplayName("성공: ANALYZED 주문에 기술자를 배정하면 MatchingRecord가 저장된다")
         void assign_Success() {
             // given
+            allowTechnician(10L);
             Order order = new Order(idGenerator.generate(), "ORD-0301", OrderStatus.ANALYZED, LocalDate.now().plusDays(5));
             given(orderRepository.findById(1L)).willReturn(Optional.of(order));
             given(employeeMapper.findTierById(10L)).willReturn("A");
@@ -76,6 +84,7 @@ class AssignmentCommandServiceTest {
         @DisplayName("성공: 역량(A) < 난이도(D5=S) → GROWTH_TYPE으로 저장된다")
         void assign_GrowthType_WhenTierBelowRequired() {
             // given
+            allowTechnician(10L);
             Order order = new Order(idGenerator.generate(), "ORD-D5", OrderStatus.ANALYZED, LocalDate.now().plusDays(5), DifficultyGrade.D5);
             given(orderRepository.findById(1L)).willReturn(Optional.of(order));
             given(employeeMapper.findTierById(10L)).willReturn("A"); // A(2) < S(3) → GROWTH_TYPE
@@ -94,6 +103,7 @@ class AssignmentCommandServiceTest {
         @DisplayName("성공: 역량(S) >= 난이도(D5=S) → EFFICIENCY_TYPE으로 저장된다")
         void assign_EfficiencyType_WhenTierMeetsRequired() {
             // given
+            allowTechnician(10L);
             Order order = new Order(idGenerator.generate(), "ORD-D5", OrderStatus.ANALYZED, LocalDate.now().plusDays(5), DifficultyGrade.D5);
             given(orderRepository.findById(1L)).willReturn(Optional.of(order));
             given(employeeMapper.findTierById(10L)).willReturn("S"); // S(3) >= S(3) → EFFICIENCY_TYPE
@@ -112,6 +122,7 @@ class AssignmentCommandServiceTest {
         @DisplayName("실패: ANALYZED 상태가 아닌 주문에는 배정할 수 없다")
         void assign_Fail_WhenNotAnalyzed() {
             // given
+            allowTechnician(10L);
             Order order = new Order(idGenerator.generate(), "ORD-0301", OrderStatus.REGISTERED, LocalDate.now().plusDays(5));
             given(orderRepository.findById(1L)).willReturn(Optional.of(order));
             given(employeeMapper.findTierById(10L)).willReturn("A");
@@ -125,11 +136,23 @@ class AssignmentCommandServiceTest {
         @DisplayName("실패: 존재하지 않는 주문 ID로 배정 시 예외가 발생한다")
         void assign_Fail_WhenOrderNotFound() {
             // given
+            allowTechnician(10L);
             given(orderRepository.findById(999L)).willReturn(Optional.empty());
 
             // when & then
             assertThrows(NoSuchElementException.class,
                     () -> assignmentCommandService.assign(new AssignRequest(999L, 10L)));
+        }
+
+        @Test
+        @DisplayName("실패: 본인 부서 소속 팀원이 아닌 기술자는 배정할 수 없다")
+        void assign_Fail_WhenTechnicianIsNotTeamMember() {
+            // given
+            allowTechnician(20L);
+
+            // when & then
+            assertThrows(IllegalArgumentException.class,
+                    () -> assignmentCommandService.assign(new AssignRequest(1L, 10L)));
         }
     }
 
@@ -141,6 +164,7 @@ class AssignmentCommandServiceTest {
         @DisplayName("성공: 새 기술자 ID로 배정 기록이 갱신된다")
         void reassign_Success() {
             // given
+            allowTechnician(20L);
             Long recordId = idGenerator.generate();
             Long orderId  = idGenerator.generate();
             MatchingRecord record = new MatchingRecord(recordId, orderId, 10L, MatchingMode.EFFICIENCY_TYPE);
@@ -164,6 +188,7 @@ class AssignmentCommandServiceTest {
         @DisplayName("성공: 새 기술자 티어가 낮으면 GROWTH_TYPE으로 재산정된다")
         void reassign_GrowthType_WhenNewTierBelowRequired() {
             // given
+            allowTechnician(20L);
             Long recordId = idGenerator.generate();
             Long orderId  = idGenerator.generate();
             MatchingRecord record = new MatchingRecord(recordId, orderId, 10L, MatchingMode.EFFICIENCY_TYPE);
@@ -186,6 +211,7 @@ class AssignmentCommandServiceTest {
         @DisplayName("실패: 존재하지 않는 배정 기록 ID로 재배정 시 예외가 발생한다")
         void reassign_Fail_WhenRecordNotFound() {
             // given
+            allowTechnician(20L);
             given(matchingRecordRepository.findById(999L)).willReturn(Optional.empty());
 
             // when & then
@@ -231,5 +257,11 @@ class AssignmentCommandServiceTest {
             assertThrows(NoSuchElementException.class,
                     () -> assignmentCommandService.cancel(999L));
         }
+    }
+
+    private void allowTechnician(Long technicianId) {
+        HrTeamMemberResponse member = mock(HrTeamMemberResponse.class);
+        given(member.getEmployeeId()).willReturn(technicianId);
+        given(hrClient.getTeamMembers()).willReturn(List.of(member));
     }
 }
