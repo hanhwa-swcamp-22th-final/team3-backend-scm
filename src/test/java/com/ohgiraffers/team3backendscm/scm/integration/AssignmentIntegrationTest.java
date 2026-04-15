@@ -1,7 +1,10 @@
 package com.ohgiraffers.team3backendscm.scm.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ohgiraffers.team3backendscm.common.dto.ApiResponse;
 import com.ohgiraffers.team3backendscm.common.idgenerator.TimeBasedIdGenerator;
+import com.ohgiraffers.team3backendscm.infrastructure.client.AdminFeignClient;
+import com.ohgiraffers.team3backendscm.infrastructure.client.dto.AdminEmployeeProfileResponse;
 import com.ohgiraffers.team3backendscm.scm.command.application.dto.request.AssignRequest;
 import com.ohgiraffers.team3backendscm.scm.command.application.dto.request.ReassignRequest;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingRecord;
@@ -19,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -31,10 +35,10 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -70,6 +74,9 @@ class AssignmentIntegrationTest {
     @Autowired private JdbcTemplate jdbcTemplate;
     @PersistenceContext private EntityManager entityManager;
 
+    @MockBean
+    private AdminFeignClient adminFeignClient;
+
     private final TimeBasedIdGenerator idGenerator = new TimeBasedIdGenerator();
 
     private Long testProductId;
@@ -79,8 +86,7 @@ class AssignmentIntegrationTest {
 
     /**
      * 각 테스트 전 FK 의존 사전 데이터와 테스트 주문을 삽입하고,
-     * 실제 employee 테이블에서 기술자 ID를 조회한다.
-     * employee 가 없으면 테스트를 건너뛴다 (assumeTrue).
+     * 기술자 정보는 Admin Feign mock 으로 대체한다.
      * @Transactional 범위 안에서 실행되므로 테스트 후 자동 롤백된다.
      */
     @BeforeEach
@@ -88,12 +94,10 @@ class AssignmentIntegrationTest {
         testProductId = idGenerator.generate();
         testConfigId  = idGenerator.generate();
         testOrderId   = idGenerator.generate();
-
-        // 실제 DB의 employee_id 조회 (없으면 테스트 skip)
-        List<Long> employees = jdbcTemplate.queryForList(
-                "SELECT employee_id FROM employee LIMIT 1", Long.class);
-        assumeTrue(!employees.isEmpty(), "employee 데이터가 없어 테스트를 건너뜁니다.");
-        testEmployeeId = employees.get(0);
+        List<Long> employeeIds = findScmReferencedEmployeeIds();
+        assumeTrue(!employeeIds.isEmpty(), "SCM 배정/배치 employee 참조 데이터가 없어 테스트를 건너뜁니다.");
+        testEmployeeId = employeeIds.get(0);
+        givenEmployeeProfile(testEmployeeId, "A");
 
         // FK 의존 사전 데이터 삽입
         jdbcTemplate.update(
@@ -101,13 +105,13 @@ class AssignmentIntegrationTest {
                 testProductId, "테스트 제품", "TEST-PROD");
 
         jdbcTemplate.update(
-                "INSERT INTO OCSA_weight_config (config_id, industry_preset) VALUES (?, ?)",
+                "INSERT INTO OCSA_weight_config (config_id, industry_preset_name) VALUES (?, ?)",
                 testConfigId, "SEMICONDUCTOR");
 
         // 배정 대상 주문 삽입 (ANALYZED 상태)
         jdbcTemplate.update(
-                "INSERT INTO orders (order_id, product_id, config_id, order_no, order_quantity, order_status, order_deadline) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO orders (order_id, product_id, config_id, order_no, order_quantity, order_status, order_deadline, process_step_count, tolerance_mm, skill_level, is_first_order) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0.1000, 1, false)",
                 testOrderId, testProductId, testConfigId,
                 "ORD-TEST-" + testOrderId, 1, "ANALYZED",
                 LocalDate.now().plusDays(5).toString());
@@ -154,8 +158,8 @@ class AssignmentIntegrationTest {
         Long matchingRecordId  = idGenerator.generate();
 
         jdbcTemplate.update(
-                "INSERT INTO orders (order_id, product_id, config_id, order_no, order_quantity, order_status, order_deadline) " +
-                "VALUES (?, ?, ?, ?, 1, 'INPROGRESS', ?)",
+                "INSERT INTO orders (order_id, product_id, config_id, order_no, order_quantity, order_status, order_deadline, process_step_count, tolerance_mm, skill_level, is_first_order) " +
+                "VALUES (?, ?, ?, ?, 1, 'INPROGRESS', ?, 1, 0.1000, 1, false)",
                 inprogressOrderId, testProductId, testConfigId,
                 "ORD-REASSIGN-" + inprogressOrderId,
                 LocalDate.now().plusDays(5).toString());
@@ -165,12 +169,13 @@ class AssignmentIntegrationTest {
                 "VALUES (?, ?, ?, 'CONFIRM', NOW())",
                 matchingRecordId, inprogressOrderId, testEmployeeId);
 
-        // 재배정 대상: 현재 기술자와 다른 employee 조회 (없으면 skip)
-        List<Long> others = jdbcTemplate.queryForList(
-                "SELECT employee_id FROM employee WHERE employee_id != ? LIMIT 1",
-                Long.class, testEmployeeId);
-        assumeTrue(!others.isEmpty(), "재배정 테스트를 위한 다른 employee 가 없어 건너뜁니다.");
-        Long newEmployeeId = others.get(0);
+        List<Long> employeeIds = findScmReferencedEmployeeIds();
+        Long newEmployeeId = employeeIds.stream()
+                .filter(employeeId -> !employeeId.equals(testEmployeeId))
+                .findFirst()
+                .orElse(null);
+        assumeTrue(newEmployeeId != null, "재배정 테스트를 위한 다른 SCM employee 참조가 없어 건너뜁니다.");
+        givenEmployeeProfile(newEmployeeId, "S");
 
         // when - PUT /api/v1/scm/assignments/{matchingRecordId}
         ReassignRequest request = new ReassignRequest(newEmployeeId);
@@ -195,8 +200,8 @@ class AssignmentIntegrationTest {
         Long matchingRecordId  = idGenerator.generate();
 
         jdbcTemplate.update(
-                "INSERT INTO orders (order_id, product_id, config_id, order_no, order_quantity, order_status, order_deadline) " +
-                "VALUES (?, ?, ?, ?, 1, 'INPROGRESS', ?)",
+                "INSERT INTO orders (order_id, product_id, config_id, order_no, order_quantity, order_status, order_deadline, process_step_count, tolerance_mm, skill_level, is_first_order) " +
+                "VALUES (?, ?, ?, ?, 1, 'INPROGRESS', ?, 1, 0.1000, 1, false)",
                 inprogressOrderId, testProductId, testConfigId,
                 "ORD-CANCEL-" + inprogressOrderId,
                 LocalDate.now().plusDays(5).toString());
@@ -245,8 +250,8 @@ class AssignmentIntegrationTest {
             // REGISTERED 상태 주문 별도 삽입
             Long registeredOrderId = idGenerator.generate();
             jdbcTemplate.update(
-                    "INSERT INTO orders (order_id, product_id, config_id, order_no, order_quantity, order_status, order_deadline) " +
-                    "VALUES (?, ?, ?, ?, 1, 'REGISTERED', ?)",
+                    "INSERT INTO orders (order_id, product_id, config_id, order_no, order_quantity, order_status, order_deadline, process_step_count, tolerance_mm, skill_level, is_first_order) " +
+                    "VALUES (?, ?, ?, ?, 1, 'REGISTERED', ?, 1, 0.1000, 1, false)",
                     registeredOrderId, testProductId, testConfigId,
                     "ORD-REG-" + registeredOrderId,
                     LocalDate.now().plusDays(5).toString());
@@ -295,8 +300,8 @@ class AssignmentIntegrationTest {
             Long completedRecordId = idGenerator.generate();
 
             jdbcTemplate.update(
-                    "INSERT INTO orders (order_id, product_id, config_id, order_no, order_quantity, order_status, order_deadline) " +
-                    "VALUES (?, ?, ?, ?, 1, 'COMPLETED', ?)",
+                    "INSERT INTO orders (order_id, product_id, config_id, order_no, order_quantity, order_status, order_deadline, process_step_count, tolerance_mm, skill_level, is_first_order) " +
+                    "VALUES (?, ?, ?, ?, 1, 'COMPLETED', ?, 1, 0.1000, 1, false)",
                     completedOrderId, testProductId, testConfigId,
                     "ORD-DONE-" + completedOrderId,
                     LocalDate.now().plusDays(5).toString());
@@ -309,5 +314,27 @@ class AssignmentIntegrationTest {
             mockMvc.perform(delete("/api/v1/scm/assignments/" + completedRecordId))
                     .andExpect(status().isBadRequest());
         }
+    }
+
+    private void givenEmployeeProfile(Long employeeId, String tier) {
+        AdminEmployeeProfileResponse profile = new AdminEmployeeProfileResponse();
+        profile.setEmployeeId(employeeId);
+        profile.setEmployeeName("테스트 기술자");
+        profile.setCurrentTier(tier);
+
+        when(adminFeignClient.getEmployeeProfile(employeeId))
+                .thenReturn(ApiResponse.success(profile));
+    }
+
+    private List<Long> findScmReferencedEmployeeIds() {
+        return jdbcTemplate.queryForList("""
+                SELECT employee_id
+                  FROM (
+                        SELECT employee_id FROM worker_deployment WHERE employee_id IS NOT NULL
+                        UNION
+                        SELECT employee_id FROM matching_record WHERE employee_id IS NOT NULL
+                       ) scm_employee_refs
+                 LIMIT 2
+                """, Long.class);
     }
 }

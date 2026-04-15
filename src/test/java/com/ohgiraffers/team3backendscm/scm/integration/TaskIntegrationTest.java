@@ -29,7 +29,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -79,7 +78,6 @@ class TaskIntegrationTest {
     /**
      * 각 테스트 전 FK 의존 사전 데이터를 삽입한다.
      * - product, OCSA_weight_config, orders(INPROGRESS), matching_record(CONFIRM) 순으로 삽입.
-     * - employee 가 없으면 테스트를 건너뛴다 (assumeTrue).
      * @Transactional 범위 안에서 실행되므로 테스트 후 자동 롤백된다.
      */
     @BeforeEach
@@ -88,12 +86,9 @@ class TaskIntegrationTest {
         testConfigId         = idGenerator.generate();
         testOrderId          = idGenerator.generate();
         testMatchingRecordId = idGenerator.generate();
-
-        // 실제 DB 의 employee_id 조회 (없으면 테스트 skip)
-        List<Long> employees = jdbcTemplate.queryForList(
-                "SELECT employee_id FROM employee LIMIT 1", Long.class);
-        assumeTrue(!employees.isEmpty(), "employee 데이터가 없어 테스트를 건너뜁니다.");
-        testEmployeeId = employees.get(0);
+        List<Long> employeeIds = findScmReferencedEmployeeIds();
+        assumeTrue(!employeeIds.isEmpty(), "SCM 배정/배치 employee 참조 데이터가 없어 테스트를 건너뜁니다.");
+        testEmployeeId = employeeIds.get(0);
 
         // FK 의존 사전 데이터 삽입
         jdbcTemplate.update(
@@ -101,13 +96,13 @@ class TaskIntegrationTest {
                 testProductId, "Task 테스트 제품", "TASK-PROD");
 
         jdbcTemplate.update(
-                "INSERT INTO OCSA_weight_config (config_id, industry_preset) VALUES (?, ?)",
+                "INSERT INTO OCSA_weight_config (config_id, industry_preset_name) VALUES (?, ?)",
                 testConfigId, "SEMICONDUCTOR");
 
         // 작업 대상 주문 삽입 (INPROGRESS 상태 — TaskCommandService.finish() 에서 order.complete() 호출 전제)
         jdbcTemplate.update(
-                "INSERT INTO orders (order_id, product_id, config_id, order_no, order_quantity, order_status, order_deadline) " +
-                "VALUES (?, ?, ?, ?, 1, 'INPROGRESS', ?)",
+                "INSERT INTO orders (order_id, product_id, config_id, order_no, order_quantity, order_status, order_deadline, process_step_count, tolerance_mm, skill_level, is_first_order) " +
+                "VALUES (?, ?, ?, ?, 1, 'INPROGRESS', ?, 1, 0.1000, 1, false)",
                 testOrderId, testProductId, testConfigId,
                 "ORD-TASK-" + testOrderId,
                 LocalDate.now().plusDays(5).toString());
@@ -265,5 +260,17 @@ class TaskIntegrationTest {
                             .content(objectMapper.writeValueAsString(new TaskFinishRequest("2차 시도"))))
                     .andExpect(status().isBadRequest());
         }
+    }
+
+    private List<Long> findScmReferencedEmployeeIds() {
+        return jdbcTemplate.queryForList("""
+                SELECT employee_id
+                  FROM (
+                        SELECT employee_id FROM worker_deployment WHERE employee_id IS NOT NULL
+                        UNION
+                        SELECT employee_id FROM matching_record WHERE employee_id IS NOT NULL
+                       ) scm_employee_refs
+                 LIMIT 1
+                """, Long.class);
     }
 }

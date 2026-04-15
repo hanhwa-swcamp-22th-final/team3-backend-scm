@@ -31,8 +31,8 @@
             o.order_no,
             o.order_status,
             mr.employee_id,
-            e.employee_name,
-            e.employee_tier,
+            NULL AS employee_name,
+            NULL AS employee_tier,
             mr.matching_mode,
             mr.matching_status,
             mr.d_c_ratio,
@@ -45,31 +45,7 @@
             mr.created_at
         FROM matching_record mr
         JOIN orders o ON mr.order_id = o.order_id
-        JOIN employee e ON mr.employee_id = e.employee_id
         WHERE mr.matching_record_id = #{matchingRecordId}
-    </select>
-
-    <!-- ===== findCandidates ===== -->
-    <resultMap id="CandidateMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentCandidateDto">
-        <result property="employeeId"       column="employee_id"/>
-        <result property="employeeName"     column="employee_name"/>
-        <result property="tier"             column="employee_tier"/>
-        <result property="score"            column="total_points"/>
-        <result property="suitabilityScore" column="capability_index"/>
-    </resultMap>
-
-    <select id="findCandidates" resultMap="CandidateMap">
-        SELECT
-            e.employee_id,
-            e.employee_name,
-            e.employee_tier,
-            s.total_points,
-            s.capability_index
-        FROM employee e
-        LEFT JOIN score s ON e.employee_id = s.employee_id
-        WHERE e.employee_role = 'WORKER'
-          AND e.employee_status = 'ACTIVE'
-        ORDER BY s.total_points DESC
     </select>
 
     <!-- ===== findSummary ===== -->
@@ -103,10 +79,14 @@
         <result property="factoryLineId"   column="factory_line_id"/>
         <result property="factoryLineName" column="factory_line_name"/>
         <result property="employeeId"      column="employee_id"/>
+        <result property="employeeName"    column="employee_name"/>
+        <result property="employeeTier"    column="employee_tier"/>
         <result property="assignedDate"    column="assigned_date"/>
         <result property="matchingStatus"  column="matching_status"/>
         <result property="orderNo"         column="order_no"/>
         <result property="orderStatus"     column="order_status"/>
+        <result property="workStartAt"     column="work_start_at"/>
+        <result property="workEndAt"       column="work_end_at"/>
     </resultMap>
 
     <select id="findTimeline" resultMap="TimelineMap">
@@ -114,18 +94,22 @@
             fl.factory_line_id,
             fl.factory_line_name,
             mr.employee_id,
+            NULL AS employee_name,
+            NULL AS employee_tier,
             DATE(mr.created_at) AS assigned_date,
             mr.matching_status,
             o.order_no,
-            o.order_status
+            o.order_status,
+            mr.work_start_at,
+            mr.work_end_at
         FROM matching_record mr
         JOIN orders o ON mr.order_id = o.order_id
-        JOIN worker_deployment wd ON mr.employee_id = wd.employee_id
+        LEFT JOIN worker_deployment wd ON mr.employee_id = wd.employee_id
             AND DATE(mr.created_at) BETWEEN wd.start_date AND COALESCE(wd.end_date, CURDATE())
-        JOIN equipment eq ON wd.equipment_id = eq.equipment_id
-        JOIN equipment_process ep ON eq.equipment_process_id = ep.equipment_process_id
-        JOIN factory_line fl ON ep.factory_line_id = fl.factory_line_id
-        ORDER BY fl.factory_line_id, assigned_date
+        LEFT JOIN equipment eq ON wd.equipment_id = eq.equipment_id
+        LEFT JOIN equipment_process ep ON eq.equipment_process_id = ep.equipment_process_id
+        LEFT JOIN factory_line fl ON ep.factory_line_id = fl.factory_line_id
+        ORDER BY fl.factory_line_id, assigned_date, mr.work_start_at
     </select>
 
     <!-- ===== findRebalance ===== -->
@@ -144,20 +128,37 @@
         SELECT
             fl.factory_line_id,
             fl.factory_line_name,
-            COUNT(DISTINCT e.employee_id) AS total_technician_count,
-            SUM(CASE WHEN e.employee_tier = 'S' THEN 1 ELSE 0 END) AS tier_s_count,
-            SUM(CASE WHEN e.employee_tier = 'A' THEN 1 ELSE 0 END) AS tier_a_count,
-            SUM(CASE WHEN e.employee_tier = 'B' THEN 1 ELSE 0 END) AS tier_b_count,
-            SUM(CASE WHEN e.employee_tier = 'C' THEN 1 ELSE 0 END) AS tier_c_count,
-            SUM(CASE WHEN e.employee_tier IN ('B', 'C') THEN 1 ELSE 0 END) AS recommended_count
+            COUNT(DISTINCT wd.employee_id) AS total_technician_count,
+            0 AS tier_s_count,
+            0 AS tier_a_count,
+            0 AS tier_b_count,
+            0 AS tier_c_count,
+            0 AS recommended_count
         FROM factory_line fl
         LEFT JOIN equipment_process ep ON fl.factory_line_id = ep.factory_line_id
         LEFT JOIN equipment eq ON ep.equipment_process_id = eq.equipment_process_id
         LEFT JOIN worker_deployment wd ON eq.equipment_id = wd.equipment_id
             AND (wd.end_date IS NULL OR wd.end_date >= CURDATE())
-        LEFT JOIN employee e ON wd.employee_id = e.employee_id
-            AND e.employee_role = 'WORKER'
         GROUP BY fl.factory_line_id, fl.factory_line_name
+    </select>
+
+    <resultMap id="RebalanceWorkerRowMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentRebalanceWorkerRow">
+        <result property="factoryLineId"   column="factory_line_id"/>
+        <result property="factoryLineName" column="factory_line_name"/>
+        <result property="employeeId"      column="employee_id"/>
+    </resultMap>
+
+    <select id="findRebalanceWorkers" resultMap="RebalanceWorkerRowMap">
+        SELECT
+            fl.factory_line_id,
+            fl.factory_line_name,
+            wd.employee_id
+        FROM factory_line fl
+        LEFT JOIN equipment_process ep ON fl.factory_line_id = ep.factory_line_id
+        LEFT JOIN equipment eq ON ep.equipment_process_id = eq.equipment_process_id
+        LEFT JOIN worker_deployment wd ON eq.equipment_id = wd.equipment_id
+            AND (wd.end_date IS NULL OR wd.end_date >= CURDATE())
+        ORDER BY fl.factory_line_id, wd.employee_id
     </select>
 
 </mapper>

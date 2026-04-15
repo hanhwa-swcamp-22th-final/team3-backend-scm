@@ -1,10 +1,14 @@
 package com.ohgiraffers.team3backendscm.scm.command.application.service.tl;
 
+import com.ohgiraffers.team3backendscm.common.dto.ApiResponse;
 import com.ohgiraffers.team3backendscm.common.idgenerator.IdGenerator;
 import com.ohgiraffers.team3backendscm.common.idgenerator.TimeBasedIdGenerator;
+import com.ohgiraffers.team3backendscm.infrastructure.client.AdminFeignClient;
+import com.ohgiraffers.team3backendscm.infrastructure.client.dto.AdminEmployeeProfileResponse;
 import com.ohgiraffers.team3backendscm.scm.command.application.dto.request.AssignRequest;
 import com.ohgiraffers.team3backendscm.scm.command.application.dto.request.ReassignRequest;
 import com.ohgiraffers.team3backendscm.scm.command.application.service.tl.AssignmentCommandService;
+import com.ohgiraffers.team3backendscm.scm.command.application.service.tl.AssignmentSnapshotCommandService;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.DifficultyGrade;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingMode;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingRecord;
@@ -13,7 +17,6 @@ import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.Order;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.OrderStatus;
 import com.ohgiraffers.team3backendscm.scm.command.domain.repository.MatchingRecordRepository;
 import com.ohgiraffers.team3backendscm.scm.command.domain.repository.OrderRepository;
-import com.ohgiraffers.team3backendscm.scm.query.mapper.EmployeeMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -47,7 +50,9 @@ class AssignmentCommandServiceTest {
     @Mock
     private IdGenerator mockIdGenerator;
     @Mock
-    private EmployeeMapper employeeMapper;
+    private AdminFeignClient adminFeignClient;
+    @Mock
+    private AssignmentSnapshotCommandService assignmentSnapshotCommandService;
 
     @InjectMocks
     private AssignmentCommandService assignmentCommandService;
@@ -62,7 +67,7 @@ class AssignmentCommandServiceTest {
             // given
             Order order = new Order(idGenerator.generate(), "ORD-0301", OrderStatus.ANALYZED, LocalDate.now().plusDays(5));
             given(orderRepository.findById(1L)).willReturn(Optional.of(order));
-            given(employeeMapper.findTierById(10L)).willReturn("A");
+            givenEmployeeTier(10L, "A");
             given(mockIdGenerator.generate()).willReturn(idGenerator.generate());
 
             // when
@@ -78,7 +83,7 @@ class AssignmentCommandServiceTest {
             // given
             Order order = new Order(idGenerator.generate(), "ORD-D5", OrderStatus.ANALYZED, LocalDate.now().plusDays(5), DifficultyGrade.D5);
             given(orderRepository.findById(1L)).willReturn(Optional.of(order));
-            given(employeeMapper.findTierById(10L)).willReturn("A"); // A(2) < S(3) → GROWTH_TYPE
+            givenEmployeeTier(10L, "A"); // A(2) < S(3) → GROWTH_TYPE
             given(mockIdGenerator.generate()).willReturn(idGenerator.generate());
 
             // when
@@ -96,7 +101,7 @@ class AssignmentCommandServiceTest {
             // given
             Order order = new Order(idGenerator.generate(), "ORD-D5", OrderStatus.ANALYZED, LocalDate.now().plusDays(5), DifficultyGrade.D5);
             given(orderRepository.findById(1L)).willReturn(Optional.of(order));
-            given(employeeMapper.findTierById(10L)).willReturn("S"); // S(3) >= S(3) → EFFICIENCY_TYPE
+            givenEmployeeTier(10L, "S"); // S(3) >= S(3) → EFFICIENCY_TYPE
             given(mockIdGenerator.generate()).willReturn(idGenerator.generate());
 
             // when
@@ -114,7 +119,7 @@ class AssignmentCommandServiceTest {
             // given
             Order order = new Order(idGenerator.generate(), "ORD-0301", OrderStatus.REGISTERED, LocalDate.now().plusDays(5));
             given(orderRepository.findById(1L)).willReturn(Optional.of(order));
-            given(employeeMapper.findTierById(10L)).willReturn("A");
+            givenEmployeeTier(10L, "A");
 
             // when & then
             assertThrows(IllegalStateException.class,
@@ -148,7 +153,7 @@ class AssignmentCommandServiceTest {
 
             given(matchingRecordRepository.findById(recordId)).willReturn(Optional.of(record));
             given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
-            given(employeeMapper.findTierById(20L)).willReturn("S");
+            givenEmployeeTier(20L, "S");
 
             // when
             assignmentCommandService.reassign(recordId, new ReassignRequest(20L));
@@ -171,7 +176,7 @@ class AssignmentCommandServiceTest {
 
             given(matchingRecordRepository.findById(recordId)).willReturn(Optional.of(record));
             given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
-            given(employeeMapper.findTierById(20L)).willReturn("B"); // B(1) < S(3)
+            givenEmployeeTier(20L, "B"); // B(1) < S(3)
 
             // when
             assignmentCommandService.reassign(recordId, new ReassignRequest(20L));
@@ -231,5 +236,12 @@ class AssignmentCommandServiceTest {
             assertThrows(NoSuchElementException.class,
                     () -> assignmentCommandService.cancel(999L));
         }
+    }
+
+    private void givenEmployeeTier(Long employeeId, String tier) {
+        AdminEmployeeProfileResponse profile = new AdminEmployeeProfileResponse();
+        profile.setEmployeeId(employeeId);
+        profile.setCurrentTier(tier);
+        given(adminFeignClient.getEmployeeProfile(employeeId)).willReturn(ApiResponse.success(profile));
     }
 }

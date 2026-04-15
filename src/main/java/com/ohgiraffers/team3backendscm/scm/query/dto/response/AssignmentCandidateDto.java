@@ -1,5 +1,6 @@
 package com.ohgiraffers.team3backendscm.scm.query.dto.response;
 
+import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingMode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,4 +23,5 @@ public class AssignmentCandidateDto {
     private String tier;              // 보유 티어 (S / A / B / C)
     private BigDecimal score;         // 기술자의 OCSA 평가 점수
     private BigDecimal suitabilityScore; // 해당 주문에 대한 적합도 점수
+    private MatchingMode matchingMode; // 주문 난이도와 작업자 티어 기반 배정 유형
 }

@@ -20,7 +20,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
-@Table(name = "OCSA_weight_config")
+@Table(name = "`OCSA_weight_config`")
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -31,7 +31,7 @@ public class OcsaWeightConfig {
     private Long configId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "industry_preset", nullable = false)
+    @Column(name = "industry_preset_name", nullable = false)
     private IndustryPreset industryPreset;
 
     @Column(name = "weight_v1")

@@ -1,5 +1,8 @@
 package com.ohgiraffers.team3backendscm.scm.query.service.tl;
 
+import com.ohgiraffers.team3backendscm.common.dto.ApiResponse;
+import com.ohgiraffers.team3backendscm.infrastructure.client.AdminFeignClient;
+import com.ohgiraffers.team3backendscm.infrastructure.client.dto.AdminEmployeeProfileResponse;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.FacilityDeploymentDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.FacilityDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.FacilityHistoryDto;
@@ -20,6 +23,7 @@ import java.util.List;
 public class FacilityQueryService {
 
     private final FacilityMapper facilityMapper;
+    private final AdminFeignClient adminFeignClient;
 
     /**
      * 전체 설비 목록을 조회한다.
@@ -47,7 +51,13 @@ public class FacilityQueryService {
      * @return 배치 인원 목록
      */
     public List<FacilityDeploymentDto> getFacilityDeployments(Long facilityId) {
-        return facilityMapper.findFacilityDeployments(facilityId);
+        return facilityMapper.findFacilityDeployments(facilityId).stream()
+                .map(deployment -> new FacilityDeploymentDto(
+                        deployment.getEmployeeId(),
+                        getEmployeeName(deployment.getEmployeeId()),
+                        deployment.getDeploymentDate()
+                ))
+                .toList();
     }
 
     /**
@@ -67,5 +77,13 @@ public class FacilityQueryService {
      */
     public List<FacilityTrendsDto> getFacilityTrends(Long facilityId) {
         return facilityMapper.findFacilityTrends(facilityId);
+    }
+
+    private String getEmployeeName(Long employeeId) {
+        ApiResponse<AdminEmployeeProfileResponse> response = adminFeignClient.getEmployeeProfile(employeeId);
+        if (response == null || !Boolean.TRUE.equals(response.getSuccess()) || response.getData() == null) {
+            return null;
+        }
+        return response.getData().getEmployeeName();
     }
 }

@@ -40,7 +40,7 @@ class LineMapperTest {
     @BeforeEach
     void setUp() {
         validLineId = jdbcTemplate.queryForObject(
-                "SELECT factory_line_id FROM factory_line LIMIT 1", Long.class);
+                "SELECT factory_line_id FROM factory_line WHERE is_deleted = false LIMIT 1", Long.class);
     }
 
     // ===== findLinesSummary =====
@@ -80,6 +80,21 @@ class LineMapperTest {
                         double rate = dto.getAchievementRate();
                         assertTrue(rate >= 0.0 && rate <= 100.0,
                                 "달성률이 0~100 범위를 벗어남: " + rate);
+                    });
+        }
+
+        @Test
+        @DisplayName("가동률(operationRate)이 0~100 사이다")
+        void findLinesSummary_OperationRateIsInValidRange() {
+            List<LineSummaryDto> result = lineMapper.findLinesSummary();
+            assumeTrue(!result.isEmpty(), "라인 데이터 없음 — skip");
+
+            result.stream()
+                    .filter(dto -> dto.getOperationRate() != null)
+                    .forEach(dto -> {
+                        double rate = dto.getOperationRate();
+                        assertTrue(rate >= 0.0 && rate <= 100.0,
+                                "가동률이 0~100 범위를 벗어남: " + rate);
                     });
         }
     }

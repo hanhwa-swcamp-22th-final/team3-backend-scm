@@ -5,21 +5,27 @@
 <mapper namespace="com.ohgiraffers.team3backendscm.scm.query.mapper.OrderMapper">
 
     <resultMap id="OrderReadDtoMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.OrderReadDto">
+        <result property="orderId"      column="order_id"/>
         <result property="orderNumber"  column="order_no"/>
         <result property="itemName"     column="product_name"/>
         <result property="status"       column="order_status"/>
         <result property="dueDate"      column="order_deadline"/>
         <result property="technicianId" column="employee_id"/>
+        <result property="difficultyScore" column="difficulty_score"/>
+        <result property="difficultyGrade" column="difficulty_grade"/>
     </resultMap>
 
     <!-- 주문 목록 조회 (status·difficultyGrade·keyword 필터) -->
     <select id="findOrders" parameterType="com.ohgiraffers.team3backendscm.scm.query.dto.request.OrderQueryRequest"
             resultMap="OrderReadDtoMap">
-        SELECT o.order_no,
+        SELECT o.order_id,
+               o.order_no,
                p.product_name,
                o.order_status,
                o.order_deadline,
-               mr.employee_id
+               mr.employee_id,
+               o.difficulty_score,
+               o.difficulty_grade
         FROM orders o
         JOIN product p ON o.product_id = p.product_id
         LEFT JOIN matching_record mr
@@ -135,11 +141,14 @@
 
     <!-- 긴급 주문 목록 조회 (납기 3일 이내, 미배정 포함) -->
     <select id="findUrgentOrders" resultMap="OrderReadDtoMap">
-        SELECT o.order_no,
+        SELECT o.order_id,
+               o.order_no,
                p.product_name,
                o.order_status,
                o.order_deadline,
-               mr.employee_id
+               mr.employee_id,
+               o.difficulty_score,
+               o.difficulty_grade
         FROM orders o
         JOIN product p ON o.product_id = p.product_id
         LEFT JOIN matching_record mr
@@ -152,18 +161,21 @@
 
     <!-- 미배정 주문 목록 조회 (ANALYZED 상태 — OCSA 분석 완료 후 기술자 미배정) -->
     <select id="findUnassignedOrders" resultMap="OrderReadDtoMap">
-        SELECT o.order_no,
+        SELECT o.order_id,
+               o.order_no,
                p.product_name,
                o.order_status,
                o.order_deadline,
-               NULL AS employee_id
+               NULL AS employee_id,
+               o.difficulty_score,
+               o.difficulty_grade
         FROM orders o
         JOIN product p ON o.product_id = p.product_id
         WHERE o.order_status = 'ANALYZED'
         ORDER BY o.order_deadline ASC
     </select>
 
-    <!-- OCSA 분석 현황 요약 집계 (ANALYZED·INPROGRESS 상태 주문 대상) -->
+    <!-- OCSA 분석 현황 요약 집계 (OCSA 난이도 산출이 완료된 주문 대상) -->
     <resultMap id="OcsaSummaryDtoMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.OcsaSummaryDto">
         <result property="analyzedOrderCount" column="analyzed_order_count"/>
         <result property="avgDifficultyScore" column="avg_difficulty_score"/>
@@ -176,7 +188,8 @@
             ROUND(AVG(difficulty_score), 2)         AS avg_difficulty_score,
             MAX(difficulty_grade)                   AS max_difficulty_grade
         FROM orders
-        WHERE order_status IN ('ANALYZED', 'INPROGRESS')
+        WHERE order_status IN ('ANALYZED', 'INPROGRESS', 'COMPLETED')
+          AND difficulty_grade IS NOT NULL
     </select>
 
 </mapper>

@@ -10,6 +10,7 @@
         <result property="totalOrderCount" column="total_order_count"/>
         <result property="completedCount"  column="completed_count"/>
         <result property="achievementRate" column="achievement_rate"/>
+        <result property="operationRate"   column="operation_rate"/>
     </resultMap>
 
     <select id="findLinesSummary" resultMap="LineSummaryMap">
@@ -18,18 +19,26 @@
             fl.factory_line_name,
             COUNT(DISTINCT o.order_id) AS total_order_count,
             SUM(CASE WHEN o.order_status = 'COMPLETED' THEN 1 ELSE 0 END) AS completed_count,
-            ROUND(
+            COALESCE(ROUND(
                 SUM(CASE WHEN o.order_status = 'COMPLETED' THEN 1 ELSE 0 END) * 100.0
                 / NULLIF(COUNT(DISTINCT o.order_id), 0),
                 1
-            ) AS achievement_rate
+            ), 0.0) AS achievement_rate,
+            COALESCE(ROUND(
+                COUNT(DISTINCT CASE WHEN eq.equipment_status = 'OPERATING' THEN eq.equipment_id END) * 100.0
+                / NULLIF(COUNT(DISTINCT eq.equipment_id), 0),
+                1
+            ), 0.0) AS operation_rate
         FROM factory_line fl
         LEFT JOIN equipment_process ep ON fl.factory_line_id = ep.factory_line_id
+            AND ep.is_deleted = false
         LEFT JOIN equipment eq ON ep.equipment_process_id = eq.equipment_process_id
+            AND eq.is_deleted = false
         LEFT JOIN worker_deployment wd ON eq.equipment_id = wd.equipment_id
         LEFT JOIN matching_record mr ON wd.employee_id = mr.employee_id
             AND DATE(mr.created_at) BETWEEN wd.start_date AND COALESCE(wd.end_date, CURDATE())
         LEFT JOIN orders o ON mr.order_id = o.order_id
+        WHERE fl.is_deleted = false
         GROUP BY fl.factory_line_id, fl.factory_line_name
     </select>
 
@@ -52,20 +61,23 @@
             COUNT(DISTINCT CASE WHEN o.order_status = 'INPROGRESS' THEN o.order_id END) AS in_progress_order_count,
             COUNT(DISTINCT eq.equipment_id) AS total_equipment_count,
             COUNT(DISTINCT CASE WHEN eq.equipment_status = 'OPERATING' THEN eq.equipment_id END) AS operating_equipment_count,
-            ROUND(
+            COALESCE(ROUND(
                 COUNT(DISTINCT CASE WHEN eq.equipment_status = 'OPERATING' THEN eq.equipment_id END) * 100.0
                 / NULLIF(COUNT(DISTINCT eq.equipment_id), 0),
                 1
-            ) AS operation_rate
+            ), 0.0) AS operation_rate
         FROM factory_line fl
         LEFT JOIN equipment_process ep ON fl.factory_line_id = ep.factory_line_id
+            AND ep.is_deleted = false
         LEFT JOIN equipment eq ON ep.equipment_process_id = eq.equipment_process_id
+            AND eq.is_deleted = false
         LEFT JOIN worker_deployment wd ON eq.equipment_id = wd.equipment_id
             AND (wd.end_date IS NULL OR wd.end_date >= CURDATE())
         LEFT JOIN matching_record mr ON wd.employee_id = mr.employee_id
             AND DATE(mr.created_at) = CURDATE()
         LEFT JOIN orders o ON mr.order_id = o.order_id
         WHERE fl.factory_line_id = #{lineId}
+          AND fl.is_deleted = false
         GROUP BY fl.factory_line_id, fl.factory_line_name
     </select>
 

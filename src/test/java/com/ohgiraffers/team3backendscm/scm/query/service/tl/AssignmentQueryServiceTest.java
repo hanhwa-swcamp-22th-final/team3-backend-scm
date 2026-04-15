@@ -1,8 +1,19 @@
 package com.ohgiraffers.team3backendscm.scm.query.service.tl;
 
+import com.ohgiraffers.team3backendscm.common.dto.ApiResponse;
+import com.ohgiraffers.team3backendscm.infrastructure.client.AdminFeignClient;
+import com.ohgiraffers.team3backendscm.infrastructure.client.dto.AdminEmployeeProfileResponse;
+import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.DifficultyGrade;
+import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingMode;
+import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentCandidateDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentDetailDto;
+import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentRebalanceWorkerRow;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentSummaryDto;
+import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentTimelineDto;
+import com.ohgiraffers.team3backendscm.scm.query.dto.response.OrderOcsaDto;
+import com.ohgiraffers.team3backendscm.scm.query.dto.response.TechnicianDto;
 import com.ohgiraffers.team3backendscm.scm.query.mapper.AssignmentMapper;
+import com.ohgiraffers.team3backendscm.scm.query.mapper.OrderMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,12 +21,17 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -24,6 +40,12 @@ class AssignmentQueryServiceTest {
 
     @Mock
     private AssignmentMapper assignmentMapper;
+    @Mock
+    private OrderMapper orderMapper;
+    @Mock
+    private TechnicianQueryService technicianQueryService;
+    @Mock
+    private AdminFeignClient adminFeignClient;
 
     @InjectMocks
     private AssignmentQueryService assignmentQueryService;
@@ -54,16 +76,41 @@ class AssignmentQueryServiceTest {
     }
 
     @Test
-    @DisplayName("배정 후보 조회 시 Mapper가 1회 호출된다")
+    @DisplayName("배정 후보 조회 시 기술자 목록을 후보 DTO로 변환한다")
     void getCandidates_CallsMapperOnce() {
         // given
-        given(assignmentMapper.findCandidates()).willReturn(List.of());
+        given(technicianQueryService.getTechnicians())
+                .willReturn(List.of(new TechnicianDto(10L, "김작업", "A", new BigDecimal("91.0"), null)));
 
         // when
-        assignmentQueryService.getCandidates();
+        List<AssignmentCandidateDto> result = assignmentQueryService.getCandidates();
 
         // then
-        verify(assignmentMapper, times(1)).findCandidates();
+        assertEquals(10L, result.get(0).getEmployeeId());
+        assertEquals(MatchingMode.EFFICIENCY_TYPE, result.get(0).getMatchingMode());
+        verify(assignmentMapper, never()).findSummary();
+    }
+
+    @Test
+    @DisplayName("주문 ID가 있으면 OCSA 난이도와 티어 기준으로 적합도와 배정 유형을 계산한다")
+    void getCandidates_WithOrderId_CalculatesSuitabilityAndMatchingMode() {
+        // given
+        given(orderMapper.findOrderOcsa(1L))
+                .willReturn(new OrderOcsaDto(1L, null, null, null, null, null, null, DifficultyGrade.D5, null));
+        given(technicianQueryService.getTechnicians())
+                .willReturn(List.of(
+                        new TechnicianDto(10L, "김에스", "S", new BigDecimal("90.0"), null),
+                        new TechnicianDto(11L, "김비", "B", new BigDecimal("90.0"), null)
+                ));
+
+        // when
+        List<AssignmentCandidateDto> result = assignmentQueryService.getCandidates(1L);
+
+        // then
+        assertEquals(10L, result.get(0).getEmployeeId());
+        assertEquals(MatchingMode.EFFICIENCY_TYPE, result.get(0).getMatchingMode());
+        assertEquals(MatchingMode.GROWTH_TYPE, result.get(1).getMatchingMode());
+        assertEquals(new BigDecimal("0.9300"), result.get(0).getSuitabilityScore());
     }
 
     @Test
@@ -93,15 +140,57 @@ class AssignmentQueryServiceTest {
     }
 
     @Test
+    @DisplayName("배정 타임라인 조회 시 Admin Feign으로 직원명과 티어를 병합한다")
+    void getTimeline_EnrichesEmployeeProfile() {
+        // given
+        AssignmentTimelineDto timeline = new AssignmentTimelineDto(
+                null,
+                null,
+                10L,
+                null,
+                null,
+                LocalDate.now(),
+                "INPROGRESS",
+                "ORD-1",
+                "INPROGRESS",
+                LocalDateTime.now().minusHours(1),
+                null
+        );
+        given(assignmentMapper.findTimeline()).willReturn(List.of(timeline));
+        AdminEmployeeProfileResponse profile = new AdminEmployeeProfileResponse();
+        profile.setEmployeeId(10L);
+        profile.setEmployeeName("김작업");
+        profile.setCurrentTier("A");
+        given(adminFeignClient.getEmployeeProfile(10L)).willReturn(ApiResponse.success(profile));
+
+        // when
+        List<AssignmentTimelineDto> result = assignmentQueryService.getTimeline();
+
+        // then
+        assertEquals("김작업", result.get(0).getEmployeeName());
+        assertEquals("A", result.get(0).getEmployeeTier());
+        assertEquals("ORD-1", result.get(0).getOrderNo());
+        verify(adminFeignClient, times(1)).getEmployeeProfile(10L);
+    }
+
+    @Test
     @DisplayName("재배치 권고 조회 시 Mapper가 1회 호출된다")
     void getRebalance_CallsMapperOnce() {
         // given
-        given(assignmentMapper.findRebalance()).willReturn(List.of());
+        AssignmentRebalanceWorkerRow row = new AssignmentRebalanceWorkerRow();
+        row.setFactoryLineId(1L);
+        row.setFactoryLineName("Main Line");
+        row.setEmployeeId(10L);
+        given(assignmentMapper.findRebalanceWorkers()).willReturn(List.of(row));
+        AdminEmployeeProfileResponse profile = new AdminEmployeeProfileResponse();
+        profile.setEmployeeId(10L);
+        profile.setCurrentTier("B");
+        given(adminFeignClient.getEmployeeProfile(10L)).willReturn(ApiResponse.success(profile));
 
         // when
         assignmentQueryService.getRebalance();
 
         // then
-        verify(assignmentMapper, times(1)).findRebalance();
+        verify(assignmentMapper, times(1)).findRebalanceWorkers();
     }
 }

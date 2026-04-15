@@ -1,10 +1,12 @@
 package com.ohgiraffers.team3backendscm.scm.query.dto.response;
 
+import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.DifficultyGrade;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.OrderStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
@@ -16,11 +18,14 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class OrderReadDto {
 
+    private Long orderId;         // 주문 PK
     private String orderNumber;    // 주문 번호
     private String itemName;       // 상품(품목) 명칭
     private OrderStatus status;    // 주문 처리 상태
     private LocalDate dueDate;     // 납기 마감일
     private Long technicianId;     // 배정된 기술자 ID (미배정 시 null)
+    private BigDecimal difficultyScore;       // OCSA 난이도 점수
+    private DifficultyGrade difficultyGrade;  // OCSA 난이도 등급 (D1~D5)
 
     /**
      * 테스트용 간략 생성자. 납기일·기술자 ID 없이 상태만 지정한다.

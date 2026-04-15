@@ -21,28 +21,42 @@
             wd.employee_id AS manager_id
         FROM equipment e
         JOIN equipment_process ep ON e.equipment_process_id = ep.equipment_process_id
+            AND ep.is_deleted = false
         LEFT JOIN worker_deployment wd ON e.equipment_id = wd.equipment_id
             AND wd.worker_deployment_role = 'PRIMARY'
             AND (wd.end_date IS NULL OR wd.end_date >= CURDATE())
+        WHERE e.is_deleted = false
+        ORDER BY e.equipment_id DESC
     </select>
 
     <!-- ===== findFacilityHistory ===== -->
     <resultMap id="FacilityHistoryDtoMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.FacilityHistoryDto">
-        <result property="eventId"     column="environment_event_id"/>
-        <result property="eventType"   column="env_deviation_type"/>
-        <result property="occurredAt"  column="env_detected_at"/>
+        <result property="eventId"     column="event_id"/>
+        <result property="eventType"   column="event_type"/>
+        <result property="occurredAt"  column="occurred_at"/>
         <result property="description" column="description"/>
     </resultMap>
 
     <select id="findFacilityHistory" resultMap="FacilityHistoryDtoMap">
         SELECT
-            ee.environment_event_id,
-            ee.env_deviation_type,
-            ee.env_detected_at,
-            CONCAT('T:', ee.env_temperature, ' H:', ee.env_humidity, ' P:', ee.env_particle_cnt) AS description
-        FROM environment_event ee
-        WHERE ee.equipment_id = #{facilityId}
-        ORDER BY ee.env_detected_at DESC
+            ml.maintenance_log_id AS event_id,
+            ml.maintenance_type AS event_type,
+            CAST(ml.maintenance_date AS DATETIME) AS occurred_at,
+            CONCAT(
+                COALESCE(mis.maintenance_item, '정비 항목 미지정'),
+                ' / 결과: ',
+                COALESCE(ml.maintenance_result, '미입력'),
+                ' / 점수: ',
+                COALESCE(CAST(ml.maintenance_score AS CHAR), '-')
+            ) AS description
+        FROM maintenance_log ml
+        JOIN equipment e ON ml.equipment_id = e.equipment_id
+            AND e.is_deleted = false
+        LEFT JOIN maintenance_item_standard mis
+            ON ml.maintenance_item_standard_id = mis.maintenance_item_standard_id
+            AND mis.is_deleted = false
+        WHERE ml.equipment_id = #{facilityId}
+        ORDER BY ml.maintenance_date DESC, ml.maintenance_log_id DESC
     </select>
 
     <!-- ===== findFacilityDeployments ===== -->
@@ -54,11 +68,12 @@
 
     <select id="findFacilityDeployments" resultMap="FacilityDeploymentDtoMap">
         SELECT
-            e.employee_id,
-            e.employee_name,
+            wd.employee_id,
+            NULL AS employee_name,
             wd.start_date
         FROM worker_deployment wd
-        JOIN employee e ON wd.employee_id = e.employee_id
+        JOIN equipment e ON wd.equipment_id = e.equipment_id
+            AND e.is_deleted = false
         WHERE wd.equipment_id = #{facilityId}
         ORDER BY wd.start_date DESC
     </select>
@@ -80,6 +95,7 @@
             SUM(CASE WHEN equipment_status = 'UNDER_INSPECTION' THEN 1 ELSE 0 END) AS under_inspection_count,
             SUM(CASE WHEN equipment_status = 'DISPOSED'         THEN 1 ELSE 0 END) AS disposed_count
         FROM equipment
+        WHERE is_deleted = false
     </select>
 
     <!-- ===== findFacilityTrends ===== -->
@@ -94,15 +110,17 @@
 
     <select id="findFacilityTrends" resultMap="FacilityTrendsMap">
         SELECT
-            equipment_id,
-            env_detected_at,
-            env_temperature,
-            env_humidity,
-            env_particle_cnt,
-            env_deviation_type
-        FROM environment_event
-        WHERE equipment_id = #{facilityId}
-        ORDER BY env_detected_at DESC
+            ee.equipment_id,
+            ee.env_detected_at,
+            ee.env_temperature,
+            ee.env_humidity,
+            ee.env_particle_cnt,
+            ee.env_deviation_type
+        FROM environment_event ee
+        JOIN equipment e ON ee.equipment_id = e.equipment_id
+            AND e.is_deleted = false
+        WHERE ee.equipment_id = #{facilityId}
+        ORDER BY ee.env_detected_at DESC
     </select>
 
 </mapper>

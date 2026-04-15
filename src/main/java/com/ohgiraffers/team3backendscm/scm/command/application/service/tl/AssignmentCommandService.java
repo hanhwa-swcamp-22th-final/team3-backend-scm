@@ -1,6 +1,9 @@
 package com.ohgiraffers.team3backendscm.scm.command.application.service.tl;
 
 import com.ohgiraffers.team3backendscm.common.idgenerator.IdGenerator;
+import com.ohgiraffers.team3backendscm.common.dto.ApiResponse;
+import com.ohgiraffers.team3backendscm.infrastructure.client.AdminFeignClient;
+import com.ohgiraffers.team3backendscm.infrastructure.client.dto.AdminEmployeeProfileResponse;
 import com.ohgiraffers.team3backendscm.scm.command.application.dto.request.AssignRequest;
 import com.ohgiraffers.team3backendscm.scm.command.application.dto.request.ReassignRequest;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingMode;
@@ -8,8 +11,6 @@ import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingReco
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.Order;
 import com.ohgiraffers.team3backendscm.scm.command.domain.repository.MatchingRecordRepository;
 import com.ohgiraffers.team3backendscm.scm.command.domain.repository.OrderRepository;
-import com.ohgiraffers.team3backendscm.scm.query.mapper.EmployeeMapper;
-import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +24,7 @@ import java.util.NoSuchElementException;
  * <ol>
  *   <li>대상 주문 조회 및 ANALYZED 상태 검증</li>
  *   <li>동일 중복 배정 여부 확인</li>
- *   <li>기술자의 숙련도 티어 조회 (HR DB 또는 EmployeeMapper)</li>
+ *   <li>Admin API를 통한 기술자 숙련도 티어 조회</li>
  *   <li>주문 난이도 vs 기술자 숙련도 비교로 MatchingMode 자동 결정</li>
  *   <li>주문 상태를 INPROGRESS 로 전이 및 저장</li>
  *   <li>배정 확정 기록(MatchingRecord) 생성 및 저장</li>
@@ -37,7 +38,7 @@ public class AssignmentCommandService {
     private final OrderRepository orderRepository;
     private final MatchingRecordRepository matchingRecordRepository;
     private final IdGenerator idGenerator;
-    private final EmployeeMapper employeeMapper;
+    private final AdminFeignClient adminFeignClient;
     private final AssignmentSnapshotCommandService assignmentSnapshotCommandService;
 
     /**
@@ -52,8 +53,7 @@ public class AssignmentCommandService {
         Order order = orderRepository.findById(request.getOrderId())
             .orElseThrow(() -> new NoSuchElementException("Order not found. id=" + request.getOrderId()));
 
-        // 기술자의 숙련도 티어 조회 (employee 및 HR 정보 또는 EmployeeMapper)
-        String employeeTier = employeeMapper.findTierById(request.getTechnicianId());
+        String employeeTier = getEmployeeTier(request.getTechnicianId());
 
         // 난이도 vs 숙련도 비교로 matching_mode 자동 결정
         MatchingMode matchingMode = MatchingMode.determine(order.getDifficultyGrade(), employeeTier);
@@ -84,7 +84,7 @@ public class AssignmentCommandService {
         Order order = orderRepository.findById(record.getOrderId())
             .orElseThrow(() -> new NoSuchElementException("Order not found. id=" + record.getOrderId()));
 
-        String employeeTier = employeeMapper.findTierById(request.getTechnicianId());
+        String employeeTier = getEmployeeTier(request.getTechnicianId());
         MatchingMode newMatchingMode = MatchingMode.determine(order.getDifficultyGrade(), employeeTier);
 
         record.reassign(request.getTechnicianId(), newMatchingMode);
@@ -114,5 +114,18 @@ public class AssignmentCommandService {
 
         order.cancelAssignment();
         orderRepository.save(order);
+    }
+
+    private String getEmployeeTier(Long employeeId) {
+        ApiResponse<AdminEmployeeProfileResponse> response = adminFeignClient.getEmployeeProfile(employeeId);
+        if (response == null || !Boolean.TRUE.equals(response.getSuccess()) || response.getData() == null) {
+            throw new NoSuchElementException("Employee not found. id=" + employeeId);
+        }
+
+        String tier = response.getData().getCurrentTier();
+        if (tier == null || tier.isBlank()) {
+            throw new IllegalStateException("Employee tier is missing. id=" + employeeId);
+        }
+        return tier;
     }
 }
