@@ -1,7 +1,9 @@
 package com.ohgiraffers.team3backendscm.scm.command.application.service.worker;
 
 import com.ohgiraffers.team3backendscm.common.idgenerator.TimeBasedIdGenerator;
+import com.ohgiraffers.team3backendscm.infrastructure.kafka.publisher.MissionProgressEventPublisher;
 import com.ohgiraffers.team3backendscm.scm.command.application.dto.request.TaskFinishRequest;
+import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.DifficultyGrade;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingMode;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingRecord;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingStatus;
@@ -35,7 +37,7 @@ import static org.mockito.Mockito.verify;
  *
  * <p>테스트 전략: @ExtendWith(MockitoExtension) — Mockito로 Repository를 모킹하여
  * 서비스 로직만 순수하게 검증한다.
- * - 작업 시작(startTask): workStartAt 기록 및 저장 검증
+ * - 작업 시작(startTask): INPROGRESS 전환, workStartAt 기록 및 저장 검증
  * - 작업 임시저장(finishDraft): workEndAt·comment 기록 및 저장 검증
  * - 작업 종료 제출(finish): COMPLETE 전환 + 주문 COMPLETED 처리 검증
  * - 예외: 존재하지 않는 배정 기록 ID 처리 검증
@@ -52,6 +54,9 @@ class TaskCommandServiceTest {
     @Mock
     private OrderRepository orderRepository;
 
+    @Mock
+    private MissionProgressEventPublisher missionProgressEventPublisher;
+
     @InjectMocks
     private TaskCommandService taskCommandService;
 
@@ -60,7 +65,7 @@ class TaskCommandServiceTest {
     class StartTask {
 
         @Test
-        @DisplayName("성공: 배정 기록에 workStartAt이 기록되고 저장된다")
+        @DisplayName("성공: 배정 기록이 INPROGRESS로 전환되고 workStartAt이 기록된다")
         void startTask_Success() {
             // given
             Long taskId = idGenerator.generate();
@@ -70,7 +75,8 @@ class TaskCommandServiceTest {
             // when
             taskCommandService.startTask(taskId);
 
-            // then - workStartAt 이 현재 시각으로 기록되고 저장되어야 한다
+            // then - 상태가 진행 중으로 전환되고 workStartAt 이 현재 시각으로 기록되어야 한다
+            assertEquals(MatchingStatus.INPROGRESS, record.getStatus());
             assertNotNull(record.getWorkStartAt());
             verify(matchingRecordRepository, times(1)).save(any(MatchingRecord.class));
         }
@@ -144,9 +150,30 @@ class TaskCommandServiceTest {
             // then - MatchingRecord와 Order 각 1회씩 저장 확인
             verify(matchingRecordRepository, times(1)).save(any(MatchingRecord.class));
             verify(orderRepository, times(1)).save(any(Order.class));
+            verify(missionProgressEventPublisher, never()).publishHighDifficultyWorkAfterCommit(any());
             // 상태 전환 확인
             assertEquals(MatchingStatus.COMPLETE, record.getStatus());
             assertEquals(OrderStatus.COMPLETED, order.getStatus());
+        }
+
+        @Test
+        @DisplayName("성공: D4 이상 주문 완료 시 고난도 작업 미션 진행 이벤트를 발행한다")
+        void finish_PublishMissionProgress_WhenHighDifficulty() {
+            // given
+            Long taskId = idGenerator.generate();
+            Long orderId = idGenerator.generate();
+            Long employeeId = 10L;
+            MatchingRecord record = new MatchingRecord(taskId, orderId, employeeId, MatchingMode.EFFICIENCY_TYPE);
+            Order order = new Order(orderId, "ORD-0402", OrderStatus.INPROGRESS, LocalDate.now().plusDays(5), DifficultyGrade.D4);
+
+            given(matchingRecordRepository.findById(taskId)).willReturn(Optional.of(record));
+            given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+
+            // when
+            taskCommandService.finish(taskId, new TaskFinishRequest("최종 코멘트"));
+
+            // then
+            verify(missionProgressEventPublisher, times(1)).publishHighDifficultyWorkAfterCommit(employeeId);
         }
 
         @Test

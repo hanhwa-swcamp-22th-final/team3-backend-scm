@@ -7,6 +7,7 @@ import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentRebalanc
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentSummaryDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentTimelineDto;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +30,17 @@ public interface AssignmentMapper {
     Optional<AssignmentDetailDto> findById(Long matchingRecordId);
 
     /**
+    /**
+     * 지정된 팀원만 배정 후보 기술자로 조회한다.
+     *
+     * @param employeeIds 현재 TL 소속 팀원 employee_id 목록
+     * @return 배정 후보 기술자 목록
+     */
+    List<AssignmentCandidateDto> findCandidatesByEmployeeIds(
+            @Param("employeeIds") List<Long> employeeIds,
+            @Param("orderId") Long orderId
+    );
+
     /**
      * 오늘 배정 수, 미배정 주문 수, 배정 정확도 등 배정 현황 요약을 조회한다.
      *

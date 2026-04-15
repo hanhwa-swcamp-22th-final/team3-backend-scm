@@ -10,6 +10,8 @@
         <result property="status"        column="equipment_status"/>
         <result property="category"      column="equipment_process_name"/>
         <result property="managerId"     column="manager_id"/>
+        <result property="managerName"   column="manager_name"/>
+        <result property="managerTier"   column="manager_tier"/>
     </resultMap>
 
     <select id="findFacilities" resultMap="FacilityDtoMap">
@@ -18,14 +20,42 @@
             e.equipment_name,
             e.equipment_status,
             ep.equipment_process_name,
-            wd.employee_id AS manager_id
+            wd.employee_id    AS manager_id,
+            emp.employee_name AS manager_name,
+            emp.employee_tier AS manager_tier
         FROM equipment e
         JOIN equipment_process ep ON e.equipment_process_id = ep.equipment_process_id
-            AND ep.is_deleted = false
+            AND COALESCE(ep.is_deleted, false) = false
         LEFT JOIN worker_deployment wd ON e.equipment_id = wd.equipment_id
             AND wd.worker_deployment_role = 'PRIMARY'
             AND (wd.end_date IS NULL OR wd.end_date >= CURDATE())
-        WHERE e.is_deleted = false
+        LEFT JOIN employee emp ON wd.employee_id = emp.employee_id
+        WHERE COALESCE(e.is_deleted, false) = false
+        ORDER BY e.equipment_id DESC
+    </select>
+
+    <!-- ===== findTeamFacilities ===== -->
+    <!-- 주어진 팀원(employeeIds)이 현재 배치된 설비 목록만 반환한다. -->
+    <select id="findTeamFacilities" resultMap="FacilityDtoMap">
+        SELECT
+            e.equipment_id,
+            e.equipment_name,
+            e.equipment_status,
+            ep.equipment_process_name,
+            wd.employee_id    AS manager_id,
+            emp.employee_name AS manager_name,
+            emp.employee_tier AS manager_tier
+        FROM equipment e
+        JOIN equipment_process ep ON e.equipment_process_id = ep.equipment_process_id
+            AND COALESCE(ep.is_deleted, false) = false
+        JOIN worker_deployment wd ON e.equipment_id = wd.equipment_id
+            AND wd.employee_id IN
+            <foreach collection="employeeIds" item="id" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+            AND (wd.end_date IS NULL OR wd.end_date >= CURDATE())
+        JOIN employee emp ON wd.employee_id = emp.employee_id
+        WHERE COALESCE(e.is_deleted, false) = false
         ORDER BY e.equipment_id DESC
     </select>
 
@@ -47,16 +77,19 @@
                 ' / 결과: ',
                 COALESCE(ml.maintenance_result, '미입력'),
                 ' / 점수: ',
-                COALESCE(CAST(ml.maintenance_score AS CHAR), '-')
+                COALESCE(CAST(ml.maintenance_score AS CHAR), '-'),
+                ' / ETA Δ ',
+                COALESCE(CAST(ml.eta_maint_delta AS CHAR), '-')
             ) AS description
         FROM maintenance_log ml
         JOIN equipment e ON ml.equipment_id = e.equipment_id
-            AND e.is_deleted = false
+            AND COALESCE(e.is_deleted, false) = false
         LEFT JOIN maintenance_item_standard mis
             ON ml.maintenance_item_standard_id = mis.maintenance_item_standard_id
-            AND mis.is_deleted = false
+            AND COALESCE(mis.is_deleted, false) = false
         WHERE ml.equipment_id = #{facilityId}
         ORDER BY ml.maintenance_date DESC, ml.maintenance_log_id DESC
+        LIMIT 10
     </select>
 
     <!-- ===== findFacilityDeployments ===== -->
@@ -73,7 +106,7 @@
             wd.start_date
         FROM worker_deployment wd
         JOIN equipment e ON wd.equipment_id = e.equipment_id
-            AND e.is_deleted = false
+            AND COALESCE(e.is_deleted, false) = false
         WHERE wd.equipment_id = #{facilityId}
         ORDER BY wd.start_date DESC
     </select>
@@ -95,7 +128,7 @@
             SUM(CASE WHEN equipment_status = 'UNDER_INSPECTION' THEN 1 ELSE 0 END) AS under_inspection_count,
             SUM(CASE WHEN equipment_status = 'DISPOSED'         THEN 1 ELSE 0 END) AS disposed_count
         FROM equipment
-        WHERE is_deleted = false
+        WHERE COALESCE(is_deleted, false) = false
     </select>
 
     <!-- ===== findFacilityTrends ===== -->
@@ -118,7 +151,7 @@
             ee.env_deviation_type
         FROM environment_event ee
         JOIN equipment e ON ee.equipment_id = e.equipment_id
-            AND e.is_deleted = false
+            AND COALESCE(e.is_deleted, false) = false
         WHERE ee.equipment_id = #{facilityId}
         ORDER BY ee.env_detected_at DESC
     </select>

@@ -1,8 +1,9 @@
 package com.ohgiraffers.team3backendscm.scm.query.service.tl;
 
-import com.ohgiraffers.team3backendscm.common.dto.ApiResponse;
-import com.ohgiraffers.team3backendscm.infrastructure.client.AdminFeignClient;
+import com.ohgiraffers.team3backendscm.infrastructure.client.AdminClient;
+import com.ohgiraffers.team3backendscm.infrastructure.client.HrClient;
 import com.ohgiraffers.team3backendscm.infrastructure.client.dto.AdminEmployeeProfileResponse;
+import com.ohgiraffers.team3backendscm.infrastructure.client.dto.EquipmentSummaryResponse;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.FacilityDeploymentDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.FacilitySummaryDto;
 import com.ohgiraffers.team3backendscm.scm.query.mapper.FacilityMapper;
@@ -28,7 +29,9 @@ class FacilityQueryServiceTest {
     @Mock
     private FacilityMapper facilityMapper;
     @Mock
-    private AdminFeignClient adminFeignClient;
+    private AdminClient adminClient;
+    @Mock
+    private HrClient hrClient;
 
     @InjectMocks
     private FacilityQueryService facilityQueryService;
@@ -68,7 +71,7 @@ class FacilityQueryServiceTest {
         AdminEmployeeProfileResponse profile = new AdminEmployeeProfileResponse();
         profile.setEmployeeId(10L);
         profile.setEmployeeName("김작업");
-        given(adminFeignClient.getEmployeeProfile(10L)).willReturn(ApiResponse.success(profile));
+        given(adminClient.getEmployeeProfile(10L)).willReturn(profile);
 
         // when
         List<FacilityDeploymentDto> result = facilityQueryService.getFacilityDeployments(1L);
@@ -79,28 +82,29 @@ class FacilityQueryServiceTest {
     }
 
     @Test
-    @DisplayName("설비 요약 조회 시 Mapper가 1회 호출된다")
-    void getFacilitySummary_CallsMapperOnce() {
+    @DisplayName("설비 요약 조회 시 Admin Client가 1회 호출된다")
+    void getFacilitySummary_CallsAdminOnce() {
         // given
-        given(facilityMapper.findFacilitySummary()).willReturn(new FacilitySummaryDto());
+        given(adminClient.getEquipmentSummary()).willReturn(new EquipmentSummaryResponse());
 
         // when
-        facilityQueryService.getFacilitySummary();
+        FacilitySummaryDto result = facilityQueryService.getFacilitySummary();
 
         // then
-        verify(facilityMapper, times(1)).findFacilitySummary();
+        assertEquals(0, result.getTotalCount());
+        verify(adminClient, times(1)).getEquipmentSummary();
     }
 
     @Test
-    @DisplayName("설비 추이 조회 시 Mapper가 1회 호출된다")
-    void getFacilityTrends_CallsMapperOnce() {
+    @DisplayName("설비 추이 조회 시 Admin Client가 1회 호출된다")
+    void getFacilityTrends_CallsAdminOnce() {
         // given
-        given(facilityMapper.findFacilityTrends(anyLong())).willReturn(List.of());
+        given(adminClient.getEnvironmentEvents(anyLong())).willReturn(List.of());
 
         // when
         facilityQueryService.getFacilityTrends(1L);
 
         // then
-        verify(facilityMapper, times(1)).findFacilityTrends(anyLong());
+        verify(adminClient, times(1)).getEnvironmentEvents(anyLong());
     }
 }

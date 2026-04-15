@@ -9,6 +9,7 @@ import com.ohgiraffers.team3backendscm.scm.query.dto.response.FacilityTrendsDto;
 import com.ohgiraffers.team3backendscm.scm.query.service.tl.FacilityQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,6 +34,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/scm")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('TL')")
 public class FacilityQueryController {
 
     private final FacilityQueryService facilityQueryService;
@@ -72,6 +74,17 @@ public class FacilityQueryController {
             @PathVariable Long facilityId) {
         List<FacilityDeploymentDto> deployments = facilityQueryService.getFacilityDeployments(facilityId);
         return ResponseEntity.ok(ApiResponse.success(deployments));
+    }
+
+    /**
+     * 로그인한 TL의 팀원이 배치된 설비 목록을 조회한다.
+     *
+     * @return 팀원 배치 설비 목록
+     */
+    @GetMapping("/facilities/my-team")
+    public ResponseEntity<ApiResponse<List<FacilityDto>>> getMyTeamFacilities() {
+        List<FacilityDto> facilities = facilityQueryService.getMyTeamFacilities();
+        return ResponseEntity.ok(ApiResponse.success(facilities));
     }
 
     /**

@@ -6,6 +6,7 @@ import com.ohgiraffers.team3backendscm.scm.command.application.dto.request.Reass
 import com.ohgiraffers.team3backendscm.scm.command.application.service.tl.AssignmentCommandService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/scm")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('TL')")
 public class AssignmentCommandController {
 
     private final AssignmentCommandService assignmentCommandService;

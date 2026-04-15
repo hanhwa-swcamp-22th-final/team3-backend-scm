@@ -17,15 +17,15 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class AssignmentTimelineDto {
 
-    private Long factoryLineId;      // 공장 라인 ID
-    private String factoryLineName;  // 공장 라인 명칭
-    private Long employeeId;         // 배정된 기술자(직원) ID
-    private String employeeName;     // 배정된 기술자 이름
-    private String employeeTier;     // 배정된 기술자 티어
-    private LocalDate assignedDate;  // 배정 날짜
-    private String matchingStatus;   // 배정 처리 상태 (MatchingStatus 문자열)
-    private String orderNo;          // 관련 주문 번호
-    private String orderStatus;      // 관련 주문 처리 상태 (OrderStatus 문자열)
-    private LocalDateTime workStartAt; // 작업 시작 시각
-    private LocalDateTime workEndAt;   // 작업 종료 시각
+    private Long factoryLineId;        // 공장 라인 ID
+    private String factoryLineName;    // 공장 라인 명칭
+    private Long employeeId;           // 배정된 기술자(직원) ID
+    private String employeeName;       // 기술자 이름
+    private String employeeTier;       // 기술자 역량 티어 (S/A/B/C)
+    private LocalDate assignedDate;    // 배정 날짜
+    private String matchingStatus;     // 배정 처리 상태 (MatchingStatus 문자열)
+    private String orderNo;            // 관련 주문 번호
+    private String orderStatus;        // 관련 주문 처리 상태 (OrderStatus 문자열)
+    private LocalDateTime workStartAt; // 작업 시작 시각 (null 가능)
+    private LocalDateTime workEndAt;   // 작업 종료 시각 (null 가능)
 }

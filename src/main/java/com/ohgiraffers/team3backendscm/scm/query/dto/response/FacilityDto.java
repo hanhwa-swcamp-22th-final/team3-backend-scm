@@ -19,4 +19,6 @@ public class FacilityDto {
     private String status;         // 운영 상태 (예: OPERATING, STOPPED, INSPECTION, DISPOSED)
     private String category;       // 설비 분류 (예: 도장, 조립, 검수 등)
     private Long managerId;        // 해당 관리자(employee_id)
+    private String managerName;    // 배치된 기술자 이름 (미배정 시 null)
+    private String managerTier;    // 배치된 기술자 역량 티어 (S/A/B/C, 미배정 시 null)
 }

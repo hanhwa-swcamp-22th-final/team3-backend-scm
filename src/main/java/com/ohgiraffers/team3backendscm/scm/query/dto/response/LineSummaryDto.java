@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 public class LineSummaryDto {
 
     private Long factoryLineId;       // 공장 라인 PK
+    private String factoryLineCode;   // 공장 라인 코드
     private String factoryLineName;   // 공장 라인 명칭
     private Integer totalOrderCount;  // 라인에 할당된 전체 주문 수
     private Integer completedCount;   // 완료된 주문 수

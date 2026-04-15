@@ -3,8 +3,6 @@ package com.ohgiraffers.team3backendscm.scm.command.domain.aggregate;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
@@ -30,9 +28,8 @@ public class OcsaWeightConfig {
     @Column(name = "config_id")
     private Long configId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "industry_preset_name", nullable = false)
-    private IndustryPreset industryPreset;
+    @Column(name = "industry_preset_name")
+    private String industryPreset;
 
     @Column(name = "weight_v1")
     private BigDecimal weightV1;

@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 public class AssignmentSummaryDto {
 
     private Integer todayAssignedCount; // 오늘 배정 완료된 주문 수
+    private Integer todayCompletedCount; // 오늘 작업 완료된 주문 수
     private Integer unassignedCount;    // 아직 배정되지 않은 주문 수 (ANALYZED 상태)
     private Double accuracy;            // 배정 정확도 (CONFIRM 상태 비율)
     private Integer activeWorkerCount;  // 현재 진행 중인 주문을 맡는 작업자 수 (실시간 가동 인원)

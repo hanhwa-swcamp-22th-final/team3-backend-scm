@@ -323,7 +323,7 @@ class AssignmentIntegrationTest {
         profile.setCurrentTier(tier);
 
         when(adminFeignClient.getEmployeeProfile(employeeId))
-                .thenReturn(ApiResponse.success(profile));
+                .thenReturn(profile);
     }
 
     private List<Long> findScmReferencedEmployeeIds() {

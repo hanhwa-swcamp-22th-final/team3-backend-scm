@@ -1,27 +1,51 @@
 package com.ohgiraffers.team3backendscm.infrastructure.client;
 
-import com.ohgiraffers.team3backendscm.common.dto.ApiResponse;
 import com.ohgiraffers.team3backendscm.infrastructure.client.dto.AdminEmployeeProfileResponse;
-import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
+import com.ohgiraffers.team3backendscm.infrastructure.client.dto.EnvironmentEventResponse;
+import com.ohgiraffers.team3backendscm.infrastructure.client.dto.EquipmentSummaryResponse;
+import com.ohgiraffers.team3backendscm.infrastructure.client.feign.AdminFeignApi;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-@FeignClient(
-        name = "adminFeignClient",
-        url = "${admin.url}",
-        configuration = AdminFeignConfiguration.class
-)
-public interface AdminFeignClient {
+/**
+ * AdminClient Feign 구현체.
+ * AdminFeignApi 를 호출하고 ApiResponse 를 언래핑해 서비스 레이어에 도메인 객체만 반환한다.
+ */
+@Component
+@RequiredArgsConstructor
+public class AdminFeignClient implements AdminClient {
 
-    @GetMapping("/api/v1/admin/employees/{employeeId}/profile")
-    ApiResponse<AdminEmployeeProfileResponse> getEmployeeProfile(@PathVariable("employeeId") Long employeeId);
+    private final AdminFeignApi adminFeignApi;
 
-    @GetMapping("/api/v1/admin/employees/{leaderId}/team-members")
-    ApiResponse<List<Long>> getTeamMemberIds(@PathVariable("leaderId") Long leaderId);
+    @Override
+    public AdminEmployeeProfileResponse getEmployeeProfile(Long employeeId) {
+        var response = adminFeignApi.getEmployeeProfile(employeeId);
+        return response == null ? null : response.getData();
+    }
 
-    @GetMapping("/api/v1/admin/employees/workers/active")
-    ApiResponse<List<Long>> getActiveWorkerIdsByTier(@RequestParam("tier") String tier);
+    @Override
+    public List<Long> getActiveWorkerIdsByTier(String tier) {
+        var response = adminFeignApi.getActiveWorkerIdsByTier(tier);
+        if (response == null || response.getData() == null) {
+            return List.of();
+        }
+        return response.getData();
+    }
+
+    @Override
+    public EquipmentSummaryResponse getEquipmentSummary() {
+        var response = adminFeignApi.getEquipmentSummary("summary");
+        return response == null ? null : response.getData();
+    }
+
+    @Override
+    public List<EnvironmentEventResponse> getEnvironmentEvents(Long equipmentId) {
+        var response = adminFeignApi.getEnvironmentEvents("history", equipmentId);
+        if (response == null || response.getData() == null) {
+            return List.of();
+        }
+        return response.getData();
+    }
 }

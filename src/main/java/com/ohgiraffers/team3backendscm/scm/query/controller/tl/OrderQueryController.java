@@ -10,6 +10,7 @@ import com.ohgiraffers.team3backendscm.scm.query.dto.response.OrderSummaryDto;
 import com.ohgiraffers.team3backendscm.scm.query.service.tl.OrderQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,6 +38,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/scm")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyAuthority('TL', 'DL')")
 public class OrderQueryController {
 
     private final OrderQueryService orderQueryService;
@@ -93,6 +95,7 @@ public class OrderQueryController {
      * @return OCSA 요약 DTO
      */
     @GetMapping("/orders/ocsa/summary")
+    @PreAuthorize("hasAuthority('TL')")
     public ResponseEntity<ApiResponse<OcsaSummaryDto>> getOcsaSummary() {
         OcsaSummaryDto summary = orderQueryService.getOcsaSummary();
         return ResponseEntity.ok(ApiResponse.success(summary));
@@ -117,6 +120,7 @@ public class OrderQueryController {
      * @return OCSA 분석 결과 DTO
      */
     @GetMapping("/orders/{orderId}/ocsa")
+    @PreAuthorize("hasAuthority('TL')")
     public ResponseEntity<ApiResponse<OrderOcsaDto>> getOrderOcsa(@PathVariable Long orderId) {
         OrderOcsaDto ocsa = orderQueryService.getOrderOcsa(orderId);
         return ResponseEntity.ok(ApiResponse.success(ocsa));

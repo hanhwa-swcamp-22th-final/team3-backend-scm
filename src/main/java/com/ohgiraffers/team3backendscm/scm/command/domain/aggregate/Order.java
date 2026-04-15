@@ -172,6 +172,7 @@ public class Order {
         order.isFirstOrder = isFirstOrder;
         order.difficultyGrade = DifficultyGrade.D1;
         order.status = OrderStatus.REGISTERED;
+        order.difficultyGrade = DifficultyGrade.D1;
         return order;
     }
 

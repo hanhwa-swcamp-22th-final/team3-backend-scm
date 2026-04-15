@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -35,6 +36,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/scm")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('TL')")
 public class AssignmentQueryController {
 
     private final AssignmentQueryService assignmentQueryService;
@@ -70,7 +72,6 @@ public class AssignmentQueryController {
      * @return 배정 현황 요약 DTO
      */
     @GetMapping("/assignments/summary")
-    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ApiResponse<AssignmentSummaryDto>> getSummary() {
         AssignmentSummaryDto summary = assignmentQueryService.getSummary();
         return ResponseEntity.ok(ApiResponse.success(summary));

@@ -58,4 +58,16 @@ class LineQueryControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
+
+    @Test
+    @DisplayName("GET /api/v1/scm/lines/1/workers → 200 OK")
+    void getLineWorkers_Return200() throws Exception {
+        // given
+        given(lineQueryService.getLineWorkers(anyLong())).willReturn(List.of());
+
+        // when / then
+        mockMvc.perform(get("/api/v1/scm/lines/1/workers"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
 }

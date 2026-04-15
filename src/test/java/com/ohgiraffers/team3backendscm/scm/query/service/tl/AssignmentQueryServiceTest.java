@@ -1,8 +1,9 @@
 package com.ohgiraffers.team3backendscm.scm.query.service.tl;
 
-import com.ohgiraffers.team3backendscm.common.dto.ApiResponse;
-import com.ohgiraffers.team3backendscm.infrastructure.client.AdminFeignClient;
+import com.ohgiraffers.team3backendscm.infrastructure.client.AdminClient;
+import com.ohgiraffers.team3backendscm.infrastructure.client.HrClient;
 import com.ohgiraffers.team3backendscm.infrastructure.client.dto.AdminEmployeeProfileResponse;
+import com.ohgiraffers.team3backendscm.infrastructure.client.dto.HrTeamMemberResponse;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.DifficultyGrade;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingMode;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentCandidateDto;
@@ -11,7 +12,6 @@ import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentRebalanc
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentSummaryDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentTimelineDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.OrderOcsaDto;
-import com.ohgiraffers.team3backendscm.scm.query.dto.response.TechnicianDto;
 import com.ohgiraffers.team3backendscm.scm.query.mapper.AssignmentMapper;
 import com.ohgiraffers.team3backendscm.scm.query.mapper.OrderMapper;
 import org.junit.jupiter.api.DisplayName;
@@ -30,7 +30,10 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -43,9 +46,9 @@ class AssignmentQueryServiceTest {
     @Mock
     private OrderMapper orderMapper;
     @Mock
-    private TechnicianQueryService technicianQueryService;
+    private AdminClient adminClient;
     @Mock
-    private AdminFeignClient adminFeignClient;
+    private HrClient hrClient;
 
     @InjectMocks
     private AssignmentQueryService assignmentQueryService;
@@ -76,31 +79,60 @@ class AssignmentQueryServiceTest {
     }
 
     @Test
-    @DisplayName("배정 후보 조회 시 기술자 목록을 후보 DTO로 변환한다")
-    void getCandidates_CallsMapperOnce() {
+    @DisplayName("배정 후보 조회 시 HR 팀원 목록 기준으로 후보 Mapper를 호출한다")
+    void getCandidates_CallsMapperWithTeamMembers() {
         // given
-        given(technicianQueryService.getTechnicians())
-                .willReturn(List.of(new TechnicianDto(10L, "김작업", "A", new BigDecimal("91.0"), null)));
+        HrTeamMemberResponse member = mock(HrTeamMemberResponse.class);
+        given(member.getEmployeeId()).willReturn(10L);
+        given(hrClient.getTeamMembers()).willReturn(List.of(member));
+        given(assignmentMapper.findCandidatesByEmployeeIds(List.of(10L), 100L))
+                .willReturn(List.of(new AssignmentCandidateDto(
+                        10L,
+                        "김작업",
+                        "A",
+                        new BigDecimal("91.0"),
+                        null,
+                        null
+                )));
 
         // when
-        List<AssignmentCandidateDto> result = assignmentQueryService.getCandidates();
+        List<AssignmentCandidateDto> result = assignmentQueryService.getCandidates(100L);
 
         // then
         assertEquals(10L, result.get(0).getEmployeeId());
-        assertEquals(MatchingMode.EFFICIENCY_TYPE, result.get(0).getMatchingMode());
+        verify(assignmentMapper, times(1)).findCandidatesByEmployeeIds(List.of(10L), 100L);
         verify(assignmentMapper, never()).findSummary();
+    }
+
+    @Test
+    @DisplayName("배정 후보 조회 시 HR 팀원 목록이 비어 있으면 빈 목록을 반환하고 Mapper를 호출하지 않는다")
+    void getCandidates_ReturnsEmpty_WhenNoTeamMembers() {
+        // given
+        given(hrClient.getTeamMembers()).willReturn(List.of());
+
+        // when
+        List<AssignmentCandidateDto> result = assignmentQueryService.getCandidates(100L);
+
+        // then
+        assertEquals(0, result.size());
+        verify(assignmentMapper, never()).findCandidatesByEmployeeIds(anyList(), any());
     }
 
     @Test
     @DisplayName("주문 ID가 있으면 OCSA 난이도와 티어 기준으로 적합도와 배정 유형을 계산한다")
     void getCandidates_WithOrderId_CalculatesSuitabilityAndMatchingMode() {
         // given
+        HrTeamMemberResponse member1 = mock(HrTeamMemberResponse.class);
+        HrTeamMemberResponse member2 = mock(HrTeamMemberResponse.class);
+        given(member1.getEmployeeId()).willReturn(10L);
+        given(member2.getEmployeeId()).willReturn(11L);
+        given(hrClient.getTeamMembers()).willReturn(List.of(member1, member2));
         given(orderMapper.findOrderOcsa(1L))
                 .willReturn(new OrderOcsaDto(1L, null, null, null, null, null, null, DifficultyGrade.D5, null));
-        given(technicianQueryService.getTechnicians())
+        given(assignmentMapper.findCandidatesByEmployeeIds(List.of(10L, 11L), 1L))
                 .willReturn(List.of(
-                        new TechnicianDto(10L, "김에스", "S", new BigDecimal("90.0"), null),
-                        new TechnicianDto(11L, "김비", "B", new BigDecimal("90.0"), null)
+                        new AssignmentCandidateDto(10L, "김에스", "S", new BigDecimal("90.0"), null, null),
+                        new AssignmentCandidateDto(11L, "김비", "B", new BigDecimal("90.0"), null, null)
                 ));
 
         // when
@@ -161,7 +193,7 @@ class AssignmentQueryServiceTest {
         profile.setEmployeeId(10L);
         profile.setEmployeeName("김작업");
         profile.setCurrentTier("A");
-        given(adminFeignClient.getEmployeeProfile(10L)).willReturn(ApiResponse.success(profile));
+        given(adminClient.getEmployeeProfile(10L)).willReturn(profile);
 
         // when
         List<AssignmentTimelineDto> result = assignmentQueryService.getTimeline();
@@ -170,7 +202,7 @@ class AssignmentQueryServiceTest {
         assertEquals("김작업", result.get(0).getEmployeeName());
         assertEquals("A", result.get(0).getEmployeeTier());
         assertEquals("ORD-1", result.get(0).getOrderNo());
-        verify(adminFeignClient, times(1)).getEmployeeProfile(10L);
+        verify(adminClient, times(1)).getEmployeeProfile(10L);
     }
 
     @Test
@@ -185,7 +217,7 @@ class AssignmentQueryServiceTest {
         AdminEmployeeProfileResponse profile = new AdminEmployeeProfileResponse();
         profile.setEmployeeId(10L);
         profile.setCurrentTier("B");
-        given(adminFeignClient.getEmployeeProfile(10L)).willReturn(ApiResponse.success(profile));
+        given(adminClient.getEmployeeProfile(10L)).willReturn(profile);
 
         // when
         assignmentQueryService.getRebalance();

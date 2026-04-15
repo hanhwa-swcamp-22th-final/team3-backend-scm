@@ -1,7 +1,7 @@
 package com.ohgiraffers.team3backendscm.scm.query.service.tl;
 
-import com.ohgiraffers.team3backendscm.common.dto.ApiResponse;
-import com.ohgiraffers.team3backendscm.infrastructure.client.AdminFeignClient;
+import com.ohgiraffers.team3backendscm.infrastructure.client.AdminClient;
+import com.ohgiraffers.team3backendscm.infrastructure.client.HrClient;
 import com.ohgiraffers.team3backendscm.infrastructure.client.dto.AdminEmployeeProfileResponse;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.DifficultyGrade;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.MatchingMode;
@@ -37,8 +37,8 @@ public class AssignmentQueryService {
 
     private final AssignmentMapper assignmentMapper;
     private final OrderMapper orderMapper;
-    private final TechnicianQueryService technicianQueryService;
-    private final AdminFeignClient adminFeignClient;
+    private final AdminClient adminClient;
+    private final HrClient hrClient;
 
     /**
      * 배정 기록 ID로 배정 상세 정보를 조회한다.
@@ -82,15 +82,22 @@ public class AssignmentQueryService {
     }
 
     public List<AssignmentCandidateDto> getCandidates(Long orderId) {
+        List<Long> teamMemberIds = hrClient.getTeamMembers().stream()
+                .map(member -> member.getEmployeeId())
+                .toList();
+        if (teamMemberIds.isEmpty()) {
+            return List.of();
+        }
+
         DifficultyGrade difficultyGrade = getDifficultyGrade(orderId);
-        return technicianQueryService.getTechnicians().stream()
-                .map(technician -> new AssignmentCandidateDto(
-                        technician.getEmployeeId(),
-                        technician.getEmployeeName(),
-                        technician.getTier(),
-                        technician.getOcsaScore(),
-                        calculateSuitability(technician.getOcsaScore(), technician.getTier(), difficultyGrade),
-                        MatchingMode.determine(difficultyGrade, technician.getTier())
+        return assignmentMapper.findCandidatesByEmployeeIds(teamMemberIds, orderId).stream()
+                .map(candidate -> new AssignmentCandidateDto(
+                        candidate.getEmployeeId(),
+                        candidate.getEmployeeName(),
+                        candidate.getTier(),
+                        candidate.getScore(),
+                        calculateSuitability(candidate.getScore(), candidate.getTier(), difficultyGrade),
+                        MatchingMode.determine(difficultyGrade, candidate.getTier())
                 ))
                 .sorted((left, right) -> nullSafe(right.getSuitabilityScore()).compareTo(nullSafe(left.getSuitabilityScore())))
                 .toList();
@@ -179,8 +186,8 @@ public class AssignmentQueryService {
                 timeline.getFactoryLineId(),
                 timeline.getFactoryLineName(),
                 timeline.getEmployeeId(),
-                profile == null ? null : profile.getEmployeeName(),
-                profile == null ? null : profile.getCurrentTier(),
+                profile == null ? timeline.getEmployeeName() : profile.getEmployeeName(),
+                profile == null ? timeline.getEmployeeTier() : profile.getCurrentTier(),
                 timeline.getAssignedDate(),
                 timeline.getMatchingStatus(),
                 timeline.getOrderNo(),
@@ -194,11 +201,7 @@ public class AssignmentQueryService {
         if (employeeId == null) {
             return null;
         }
-        ApiResponse<AdminEmployeeProfileResponse> response = adminFeignClient.getEmployeeProfile(employeeId);
-        if (response == null || !Boolean.TRUE.equals(response.getSuccess())) {
-            return null;
-        }
-        return response.getData();
+        return adminClient.getEmployeeProfile(employeeId);
     }
 
     private DifficultyGrade getDifficultyGrade(Long orderId) {

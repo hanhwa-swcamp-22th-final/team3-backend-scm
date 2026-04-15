@@ -1,13 +1,10 @@
 package com.ohgiraffers.team3backendscm.scm.query.service.tl;
 
-import com.ohgiraffers.team3backendscm.common.dto.ApiResponse;
-import com.ohgiraffers.team3backendscm.infrastructure.client.AdminFeignClient;
+import com.ohgiraffers.team3backendscm.infrastructure.client.AdminClient;
+import com.ohgiraffers.team3backendscm.infrastructure.client.HrClient;
 import com.ohgiraffers.team3backendscm.infrastructure.client.dto.AdminEmployeeProfileResponse;
-import com.ohgiraffers.team3backendscm.jwt.EmployeeUserDetails;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.TechnicianDto;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
@@ -23,7 +20,8 @@ public class TechnicianQueryService {
 
     private static final List<String> TIERS = List.of("S", "A", "B", "C");
 
-    private final AdminFeignClient adminFeignClient;
+    private final AdminClient adminClient;
+    private final HrClient hrClient;
 
     /**
      * 배정 가능한 전체 기술자 목록을 조회한다.
@@ -50,41 +48,19 @@ public class TechnicianQueryService {
     }
 
     private List<Long> getVisibleWorkerIds() {
-        Long currentEmployeeId = getCurrentEmployeeId();
-        if (currentEmployeeId != null) {
-            ApiResponse<List<Long>> response = adminFeignClient.getTeamMemberIds(currentEmployeeId);
-            if (response != null && Boolean.TRUE.equals(response.getSuccess())
-                    && response.getData() != null && !response.getData().isEmpty()) {
-                return response.getData();
-            }
+        List<Long> teamMemberIds = hrClient.getTeamMembers().stream()
+                .map(member -> member.getEmployeeId())
+                .toList();
+        if (!teamMemberIds.isEmpty()) {
+            return teamMemberIds;
         }
 
         return TIERS.stream()
-                .flatMap(tier -> getActiveWorkerIdsByTier(tier).stream())
+                .flatMap(tier -> adminClient.getActiveWorkerIdsByTier(tier).stream())
                 .toList();
     }
 
-    private Long getCurrentEmployeeId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !(authentication.getPrincipal() instanceof EmployeeUserDetails userDetails)) {
-            return null;
-        }
-        return userDetails.getEmployeeId();
-    }
-
-    private List<Long> getActiveWorkerIdsByTier(String tier) {
-        ApiResponse<List<Long>> response = adminFeignClient.getActiveWorkerIdsByTier(tier);
-        if (response == null || !Boolean.TRUE.equals(response.getSuccess()) || response.getData() == null) {
-            return List.of();
-        }
-        return response.getData();
-    }
-
     private AdminEmployeeProfileResponse getProfile(Long employeeId) {
-        ApiResponse<AdminEmployeeProfileResponse> response = adminFeignClient.getEmployeeProfile(employeeId);
-        if (response == null || !Boolean.TRUE.equals(response.getSuccess())) {
-            return null;
-        }
-        return response.getData();
+        return adminClient.getEmployeeProfile(employeeId);
     }
 }
