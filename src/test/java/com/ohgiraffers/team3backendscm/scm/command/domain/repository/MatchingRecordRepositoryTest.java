@@ -57,23 +57,21 @@ class MatchingRecordRepositoryTest {
         testProductId = idGenerator.generate();
         testConfigId  = idGenerator.generate();
         testOrderId   = idGenerator.generate();
-
-        List<Long> employees = jdbcTemplate.queryForList(
-                "SELECT employee_id FROM employee LIMIT 1", Long.class);
-        assumeTrue(!employees.isEmpty(), "employee 데이터가 없어 테스트를 건너뜁니다.");
-        testEmployeeId = employees.get(0);
+        List<Long> employeeIds = findScmReferencedEmployeeIds();
+        assumeTrue(!employeeIds.isEmpty(), "SCM 배정/배치 employee 참조 데이터가 없어 테스트를 건너뜁니다.");
+        testEmployeeId = employeeIds.get(0);
 
         jdbcTemplate.update(
                 "INSERT INTO product (product_id, product_name, product_code) VALUES (?, ?, ?)",
                 testProductId, "테스트 제품", "TEST-REPO");
 
         jdbcTemplate.update(
-                "INSERT INTO OCSA_weight_config (config_id, industry_preset) VALUES (?, ?)",
+                "INSERT INTO OCSA_weight_config (config_id, industry_preset_name) VALUES (?, ?)",
                 testConfigId, "SEMICONDUCTOR");
 
         jdbcTemplate.update(
-                "INSERT INTO orders (order_id, product_id, config_id, order_no, order_quantity, order_status, order_deadline) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO orders (order_id, product_id, config_id, order_no, order_quantity, order_status, order_deadline, process_step_count, tolerance_mm, skill_level, is_first_order) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0.1000, 1, false)",
                 testOrderId, testProductId, testConfigId,
                 "ORD-REPO-" + testOrderId, 1, "ANALYZED",
                 LocalDate.now().plusDays(5).toString());
@@ -146,5 +144,17 @@ class MatchingRecordRepositoryTest {
             // then
             assertTrue(result.isEmpty(), "배정 기록이 없으면 빈 리스트여야 한다");
         }
+    }
+
+    private List<Long> findScmReferencedEmployeeIds() {
+        return jdbcTemplate.queryForList("""
+                SELECT employee_id
+                  FROM (
+                        SELECT employee_id FROM worker_deployment WHERE employee_id IS NOT NULL
+                        UNION
+                        SELECT employee_id FROM matching_record WHERE employee_id IS NOT NULL
+                       ) scm_employee_refs
+                 LIMIT 1
+                """, Long.class);
     }
 }

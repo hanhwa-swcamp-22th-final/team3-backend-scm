@@ -31,8 +31,8 @@
             o.order_no,
             o.order_status,
             mr.employee_id,
-            e.employee_name,
-            e.employee_tier,
+            NULL AS employee_name,
+            NULL AS employee_tier,
             mr.matching_mode,
             mr.matching_status,
             mr.d_c_ratio,
@@ -45,7 +45,6 @@
             mr.created_at
         FROM matching_record mr
         JOIN orders o ON mr.order_id = o.order_id
-        JOIN employee e ON mr.employee_id = e.employee_id
         WHERE mr.matching_record_id = #{matchingRecordId}
     </select>
 
@@ -58,21 +57,6 @@
         <result property="suitabilityScore" column="capability_index"/>
         <result property="matchingMode"     column="matching_mode"/>
     </resultMap>
-
-    <select id="findCandidates" resultMap="CandidateMap">
-        SELECT
-            e.employee_id,
-            e.employee_name,
-            e.employee_tier,
-            s.total_points,
-            s.capability_index,
-            'EFFICIENCY_TYPE' AS matching_mode
-        FROM employee e
-        LEFT JOIN score s ON e.employee_id = s.employee_id
-        WHERE e.employee_role = 'WORKER'
-          AND e.employee_status = 'ACTIVE'
-        ORDER BY s.total_points DESC
-    </select>
 
     <select id="findCandidatesByEmployeeIds" resultMap="CandidateMap">
         SELECT
@@ -89,7 +73,7 @@
                         WHEN 'D4' THEN 2
                         WHEN 'D3' THEN 1
                         ELSE 0
-                    END >
+                    END &gt;
                     CASE e.employee_tier
                         WHEN 'S' THEN 3
                         WHEN 'A' THEN 2
@@ -182,7 +166,7 @@
             mr.work_end_at
         FROM matching_record mr
         JOIN orders o ON mr.order_id = o.order_id
-        JOIN employee e ON mr.employee_id = e.employee_id
+        LEFT JOIN employee e ON mr.employee_id = e.employee_id
         LEFT JOIN worker_deployment wd ON wd.worker_deployment_id = (
             SELECT wd2.worker_deployment_id
             FROM worker_deployment wd2
@@ -219,20 +203,37 @@
         SELECT
             fl.factory_line_id,
             fl.factory_line_name,
-            COUNT(DISTINCT e.employee_id) AS total_technician_count,
-            SUM(CASE WHEN e.employee_tier = 'S' THEN 1 ELSE 0 END) AS tier_s_count,
-            SUM(CASE WHEN e.employee_tier = 'A' THEN 1 ELSE 0 END) AS tier_a_count,
-            SUM(CASE WHEN e.employee_tier = 'B' THEN 1 ELSE 0 END) AS tier_b_count,
-            SUM(CASE WHEN e.employee_tier = 'C' THEN 1 ELSE 0 END) AS tier_c_count,
-            SUM(CASE WHEN e.employee_tier IN ('B', 'C') THEN 1 ELSE 0 END) AS recommended_count
+            COUNT(DISTINCT wd.employee_id) AS total_technician_count,
+            0 AS tier_s_count,
+            0 AS tier_a_count,
+            0 AS tier_b_count,
+            0 AS tier_c_count,
+            0 AS recommended_count
         FROM factory_line fl
         LEFT JOIN equipment_process ep ON fl.factory_line_id = ep.factory_line_id
         LEFT JOIN equipment eq ON ep.equipment_process_id = eq.equipment_process_id
         LEFT JOIN worker_deployment wd ON eq.equipment_id = wd.equipment_id
             AND (wd.end_date IS NULL OR wd.end_date >= CURDATE())
-        LEFT JOIN employee e ON wd.employee_id = e.employee_id
-            AND e.employee_role = 'WORKER'
         GROUP BY fl.factory_line_id, fl.factory_line_name
+    </select>
+
+    <resultMap id="RebalanceWorkerRowMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentRebalanceWorkerRow">
+        <result property="factoryLineId"   column="factory_line_id"/>
+        <result property="factoryLineName" column="factory_line_name"/>
+        <result property="employeeId"      column="employee_id"/>
+    </resultMap>
+
+    <select id="findRebalanceWorkers" resultMap="RebalanceWorkerRowMap">
+        SELECT
+            fl.factory_line_id,
+            fl.factory_line_name,
+            wd.employee_id
+        FROM factory_line fl
+        LEFT JOIN equipment_process ep ON fl.factory_line_id = ep.factory_line_id
+        LEFT JOIN equipment eq ON ep.equipment_process_id = eq.equipment_process_id
+        LEFT JOIN worker_deployment wd ON eq.equipment_id = wd.equipment_id
+            AND (wd.end_date IS NULL OR wd.end_date >= CURDATE())
+        ORDER BY fl.factory_line_id, wd.employee_id
     </select>
 
 </mapper>

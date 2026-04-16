@@ -21,4 +21,5 @@ public class LineSummaryDto {
     private Integer totalOrderCount;  // 라인에 할당된 전체 주문 수
     private Integer completedCount;   // 완료된 주문 수
     private Double achievementRate;   // 달성률 (completedCount / totalOrderCount, 0.0~1.0)
+    private Double operationRate;     // 설비 가동률 (operatingEquipmentCount / totalEquipmentCount, 0.0~100.0)
 }

@@ -38,7 +38,13 @@ public interface MatchingRecordRepository extends JpaMatchingRecordRepository {
      * @param assignedDate 배정 생성 날짜
      * @return 배정 기록 목록
      */
-    List<MatchingRecord> findByTechnicianIdAndAssignedDate(Long technicianId, LocalDate assignedDate);
+    default List<MatchingRecord> findByTechnicianIdAndAssignedDate(Long technicianId, LocalDate assignedDate) {
+        return findByEmployeeIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+                technicianId,
+                assignedDate.atStartOfDay(),
+                assignedDate.plusDays(1).atStartOfDay()
+        );
+    }
 
     /**
      * 특정 주문에 대한 배정 기록 조회.
