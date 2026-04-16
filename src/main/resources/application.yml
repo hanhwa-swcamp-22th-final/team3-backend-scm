@@ -36,5 +36,17 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+admin:
+  url: ${ADMIN_URL:http://localhost:8080}
+
 hr:
   url: ${HR_URL:http://localhost:8081}
