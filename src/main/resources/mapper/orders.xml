@@ -12,6 +12,7 @@
         <result property="dueDate"         column="order_deadline"/>
         <result property="technicianId"    column="employee_id"/>
         <result property="technicianName"  column="employee_name"/>
+        <result property="difficultyScore" column="difficulty_score"/>
         <result property="difficultyGrade" column="difficulty_grade"/>
     </resultMap>
 
@@ -23,9 +24,10 @@
                p.product_name,
                o.order_status,
                o.order_deadline,
-               o.difficulty_grade,
                mr.employee_id,
-               e.employee_name
+               e.employee_name,
+               o.difficulty_score,
+               o.difficulty_grade
         FROM orders o
         JOIN product p ON o.product_id = p.product_id
         LEFT JOIN matching_record mr
@@ -147,9 +149,10 @@
                p.product_name,
                o.order_status,
                o.order_deadline,
-               o.difficulty_grade,
                mr.employee_id,
-               e.employee_name
+               e.employee_name,
+               o.difficulty_score,
+               o.difficulty_grade
         FROM orders o
         JOIN product p ON o.product_id = p.product_id
         LEFT JOIN matching_record mr
@@ -168,9 +171,10 @@
                p.product_name,
                o.order_status,
                o.order_deadline,
-               o.difficulty_grade,
                NULL AS employee_id,
-               NULL AS employee_name
+               NULL AS employee_name,
+               o.difficulty_score,
+               o.difficulty_grade
         FROM orders o
         JOIN product p ON o.product_id = p.product_id
         WHERE o.order_status = 'ANALYZED'
@@ -183,7 +187,7 @@
         ORDER BY o.order_deadline ASC
     </select>
 
-    <!-- OCSA 분석 현황 요약 집계 (ANALYZED·INPROGRESS 상태 주문 대상) -->
+    <!-- OCSA 분석 현황 요약 집계 (OCSA 난이도 산출이 완료된 주문 대상) -->
     <resultMap id="OcsaSummaryDtoMap" type="com.ohgiraffers.team3backendscm.scm.query.dto.response.OcsaSummaryDto">
         <result property="analyzedOrderCount" column="analyzed_order_count"/>
         <result property="avgDifficultyScore" column="avg_difficulty_score"/>
@@ -196,7 +200,8 @@
             ROUND(AVG(difficulty_score), 2)         AS avg_difficulty_score,
             MAX(difficulty_grade)                   AS max_difficulty_grade
         FROM orders
-        WHERE order_status IN ('ANALYZED', 'INPROGRESS')
+        WHERE order_status IN ('ANALYZED', 'INPROGRESS', 'COMPLETED')
+          AND difficulty_grade IS NOT NULL
     </select>
 
 </mapper>

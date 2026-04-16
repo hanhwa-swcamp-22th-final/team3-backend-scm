@@ -1,5 +1,6 @@
 package com.ohgiraffers.team3backendscm.infrastructure.client;
 
+import com.ohgiraffers.team3backendscm.infrastructure.client.dto.AdminEmployeeProfileResponse;
 import com.ohgiraffers.team3backendscm.infrastructure.client.dto.EnvironmentEventResponse;
 import com.ohgiraffers.team3backendscm.infrastructure.client.dto.EquipmentSummaryResponse;
 import com.ohgiraffers.team3backendscm.infrastructure.client.feign.AdminFeignApi;
@@ -17,6 +18,21 @@ import java.util.List;
 public class AdminFeignClient implements AdminClient {
 
     private final AdminFeignApi adminFeignApi;
+
+    @Override
+    public AdminEmployeeProfileResponse getEmployeeProfile(Long employeeId) {
+        var response = adminFeignApi.getEmployeeProfile(employeeId);
+        return response == null ? null : response.getData();
+    }
+
+    @Override
+    public List<Long> getActiveWorkerIdsByTier(String tier) {
+        var response = adminFeignApi.getActiveWorkerIdsByTier(tier);
+        if (response == null || response.getData() == null) {
+            return List.of();
+        }
+        return response.getData();
+    }
 
     @Override
     public EquipmentSummaryResponse getEquipmentSummary() {

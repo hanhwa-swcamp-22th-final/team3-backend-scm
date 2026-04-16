@@ -2,6 +2,7 @@ package com.ohgiraffers.team3backendscm.scm.query.service.tl;
 
 import com.ohgiraffers.team3backendscm.infrastructure.client.AdminClient;
 import com.ohgiraffers.team3backendscm.infrastructure.client.HrClient;
+import com.ohgiraffers.team3backendscm.infrastructure.client.dto.AdminEmployeeProfileResponse;
 import com.ohgiraffers.team3backendscm.infrastructure.client.dto.EnvironmentEventResponse;
 import com.ohgiraffers.team3backendscm.infrastructure.client.dto.EquipmentSummaryResponse;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.FacilityDeploymentDto;
@@ -40,6 +41,28 @@ public class FacilityQueryService {
     }
 
     /**
+     * 로그인한 TL의 팀원이 배치된 설비 목록을 조회한다.
+     * HR 서비스에서 팀원 목록을 가져와 해당 팀원이 배치된 설비만 반환한다.
+     * HR 호출 실패 시 전체 설비를 반환한다(폴백).
+     *
+     * @return 팀원 배치 설비 목록
+     */
+    public List<FacilityDto> getMyTeamFacilities() {
+        try {
+            List<Long> employeeIds = hrClient.getTeamMembers().stream()
+                    .map(m -> m.getEmployeeId())
+                    .toList();
+            if (employeeIds.isEmpty()) {
+                return List.of();
+            }
+            return facilityMapper.findTeamFacilities(employeeIds);
+        } catch (Exception e) {
+            log.warn("HR 팀원 조회 실패, 전체 설비로 폴백: {}", e.getMessage());
+            return facilityMapper.findFacilities();
+        }
+    }
+
+    /**
      * 특정 설비의 이력 정보를 조회한다.
      *
      * @param facilityId 조회할 설비 ID
@@ -56,7 +79,13 @@ public class FacilityQueryService {
      * @return 배치 인원 목록
      */
     public List<FacilityDeploymentDto> getFacilityDeployments(Long facilityId) {
-        return facilityMapper.findFacilityDeployments(facilityId);
+        return facilityMapper.findFacilityDeployments(facilityId).stream()
+                .map(deployment -> new FacilityDeploymentDto(
+                        deployment.getEmployeeId(),
+                        getEmployeeName(deployment.getEmployeeId()),
+                        deployment.getDeploymentDate()
+                ))
+                .toList();
     }
 
     /**
@@ -67,6 +96,9 @@ public class FacilityQueryService {
      */
     public FacilitySummaryDto getFacilitySummary() {
         EquipmentSummaryResponse res = adminClient.getEquipmentSummary();
+        if (res == null) {
+            return new FacilitySummaryDto(0, 0, 0, 0, 0);
+        }
         return new FacilitySummaryDto(
                 (int) res.getTotalCount(),
                 (int) res.getOperatingCount(),
@@ -83,26 +115,6 @@ public class FacilityQueryService {
      * @param facilityId 조회할 설비 ID
      * @return 환경 이상 트렌드 목록
      */
-    /**
-     * 로그인한 TL의 팀원이 배치된 설비 목록을 조회한다.
-     * HR 서비스에서 팀원 목록을 가져와 해당 팀원이 배치된 설비만 반환한다.
-     * HR 호출 실패 시 전체 설비를 반환한다(폴백).
-     *
-     * @return 팀원 배치 설비 목록
-     */
-    public List<FacilityDto> getMyTeamFacilities() {
-        try {
-            List<Long> employeeIds = hrClient.getTeamMembers().stream()
-                    .map(m -> m.getEmployeeId())
-                    .toList();
-            if (employeeIds.isEmpty()) return List.of();
-            return facilityMapper.findTeamFacilities(employeeIds);
-        } catch (Exception e) {
-            log.warn("HR 팀원 조회 실패, 전체 설비로 폴백: {}", e.getMessage());
-            return facilityMapper.findFacilities();
-        }
-    }
-
     public List<FacilityTrendsDto> getFacilityTrends(Long facilityId) {
         List<EnvironmentEventResponse> events = adminClient.getEnvironmentEvents(facilityId);
         return events.stream()
@@ -115,5 +127,10 @@ public class FacilityQueryService {
                         e.getEnvDeviationType()
                 ))
                 .toList();
+    }
+
+    private String getEmployeeName(Long employeeId) {
+        AdminEmployeeProfileResponse profile = adminClient.getEmployeeProfile(employeeId);
+        return profile == null ? null : profile.getEmployeeName();
     }
 }

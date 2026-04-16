@@ -27,14 +27,14 @@ spring:
     consumer:
       group-id: ${SCM_KAFKA_CONSUMER_GROUP_ID:team3-scm}
 
+admin:
+  url: ${ADMIN_URL:http://localhost:8080}
+
 mybatis:
   mapper-locations: classpath:mapper/**/*.xml
   type-aliases-package: com.ohgiraffers.team3backendscm
   configuration:
     map-underscore-to-camel-case: true
-
-admin:
-  url: ${ADMIN_URL:http://localhost:8080}
 
 hr:
   url: ${HR_URL:http://localhost:8081}

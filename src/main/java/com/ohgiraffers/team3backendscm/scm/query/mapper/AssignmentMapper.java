@@ -3,6 +3,7 @@ package com.ohgiraffers.team3backendscm.scm.query.mapper;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentCandidateDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentDetailDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentRebalanceDto;
+import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentRebalanceWorkerRow;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentSummaryDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentTimelineDto;
 import org.apache.ibatis.annotations.Mapper;
@@ -29,13 +30,6 @@ public interface AssignmentMapper {
     Optional<AssignmentDetailDto> findById(Long matchingRecordId);
 
     /**
-     * 배정 가능한 기술자 정보 목록을 조회한다.
-     * 각 후보의 숙련도 티어, OCSA 점수, 적합도를 포함한다.
-     *
-     * @return 배정 후보 기술자 목록
-     */
-    List<AssignmentCandidateDto> findCandidates();
-
     /**
      * 지정된 팀원만 배정 후보 기술자로 조회한다.
      *
@@ -67,4 +61,9 @@ public interface AssignmentMapper {
      * @return 라인별 재조정 현황 목록
      */
     List<AssignmentRebalanceDto> findRebalance();
+
+    /**
+     * 라인별 배치 작업자 ID 목록을 조회한다. 직원 상세 정보는 Admin API에서 병합한다.
+     */
+    List<AssignmentRebalanceWorkerRow> findRebalanceWorkers();
 }

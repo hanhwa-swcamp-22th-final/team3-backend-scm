@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.ohgiraffers.team3backendscm.infrastructure.kafka.dto.OrderDifficultyAnalyzedEvent;
+import com.ohgiraffers.team3backendscm.scm.command.application.service.OrderDifficultySnapshotCommandService;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.Order;
 import com.ohgiraffers.team3backendscm.scm.command.domain.aggregate.OrderStatus;
 import com.ohgiraffers.team3backendscm.scm.command.domain.repository.OrderRepository;
@@ -25,6 +26,9 @@ class OrderDifficultyAnalyzedListenerTest {
 
     @Mock
     private OrderRepository orderRepository;
+
+    @Mock
+    private OrderDifficultySnapshotCommandService orderDifficultySnapshotCommandService;
 
     @InjectMocks
     private OrderDifficultyAnalyzedListener orderDifficultyAnalyzedListener;
@@ -49,6 +53,7 @@ class OrderDifficultyAnalyzedListenerTest {
         ));
 
         verify(orderRepository).save(order);
+        verify(orderDifficultySnapshotCommandService).publishSnapshotAfterCommit(order);
     }
 
     @Test

@@ -54,7 +54,7 @@
             eq.equipment_id,
             eq.equipment_name,
             wd.start_date,
-            wd.role
+            wd.worker_deployment_role AS role
         FROM worker_deployment wd
         JOIN equipment eq ON wd.equipment_id = eq.equipment_id
         WHERE wd.employee_id = #{employeeId}

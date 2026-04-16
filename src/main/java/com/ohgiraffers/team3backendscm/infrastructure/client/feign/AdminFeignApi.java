@@ -1,10 +1,12 @@
 package com.ohgiraffers.team3backendscm.infrastructure.client.feign;
 
 import com.ohgiraffers.team3backendscm.common.dto.ApiResponse;
+import com.ohgiraffers.team3backendscm.infrastructure.client.dto.AdminEmployeeProfileResponse;
 import com.ohgiraffers.team3backendscm.infrastructure.client.dto.EnvironmentEventResponse;
 import com.ohgiraffers.team3backendscm.infrastructure.client.dto.EquipmentSummaryResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
@@ -15,6 +17,12 @@ import java.util.List;
  */
 @FeignClient(name = "admin-feign-api", url = "${admin.url}", configuration = AdminFeignConfiguration.class)
 public interface AdminFeignApi {
+
+    @GetMapping("/api/v1/admin/employees/{employeeId}/profile")
+    ApiResponse<AdminEmployeeProfileResponse> getEmployeeProfile(@PathVariable("employeeId") Long employeeId);
+
+    @GetMapping("/api/v1/admin/employees/workers/active")
+    ApiResponse<List<Long>> getActiveWorkerIdsByTier(@RequestParam("tier") String tier);
 
     @GetMapping("/api/v1/equipment-management/equipments")
     ApiResponse<EquipmentSummaryResponse> getEquipmentSummary(

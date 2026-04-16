@@ -1,6 +1,5 @@
 package com.ohgiraffers.team3backendscm.scm.query.mapper;
 
-import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentCandidateDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentDetailDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentRebalanceDto;
 import com.ohgiraffers.team3backendscm.scm.query.dto.response.AssignmentSummaryDto;
@@ -67,32 +66,6 @@ class AssignmentMapperTest {
         }
     }
 
-    // ===== findCandidates =====
-
-    @Nested
-    @DisplayName("findCandidates — 배정 후보 기술자 목록 조회")
-    class FindCandidates {
-
-        @Test
-        @DisplayName("SQL 실행 및 ResultMap 매핑이 오류 없이 완료된다")
-        void findCandidates_ExecutesWithoutError() {
-            List<AssignmentCandidateDto> result = assignmentMapper.findCandidates();
-
-            assertNotNull(result, "결과 리스트가 null 이면 안 된다");
-        }
-
-        @Test
-        @DisplayName("데이터가 있으면 employeeId·tier 필드가 매핑된다")
-        void findCandidates_MapsFields_WhenDataExists() {
-            List<AssignmentCandidateDto> result = assignmentMapper.findCandidates();
-            assumeTrue(!result.isEmpty(), "WORKER 직원 데이터 없음 — skip");
-
-            AssignmentCandidateDto first = result.get(0);
-            assertNotNull(first.getEmployeeId(), "employeeId 매핑 확인");
-            assertNotNull(first.getTier(),       "tier 매핑 확인");
-        }
-    }
-
     // ===== findSummary =====
 
     @Nested
@@ -134,13 +107,13 @@ class AssignmentMapperTest {
         }
 
         @Test
-        @DisplayName("데이터가 있으면 factoryLineId·matchingStatus 필드가 매핑된다")
+        @DisplayName("데이터가 있으면 employeeId·matchingStatus 필드가 매핑된다")
         void findTimeline_MapsFields_WhenDataExists() {
             List<AssignmentTimelineDto> result = assignmentMapper.findTimeline();
             assumeTrue(!result.isEmpty(), "타임라인 데이터 없음 — skip");
 
             AssignmentTimelineDto first = result.get(0);
-            assertNotNull(first.getFactoryLineId(),  "factoryLineId 매핑 확인");
+            assertNotNull(first.getEmployeeId(),     "employeeId 매핑 확인");
             assertNotNull(first.getMatchingStatus(), "matchingStatus 매핑 확인");
         }
     }

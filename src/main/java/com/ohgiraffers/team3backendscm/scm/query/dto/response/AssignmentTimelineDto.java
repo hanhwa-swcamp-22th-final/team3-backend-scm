@@ -29,4 +29,3 @@ public class AssignmentTimelineDto {
     private LocalDateTime workStartAt; // 작업 시작 시각 (null 가능)
     private LocalDateTime workEndAt;   // 작업 종료 시각 (null 가능)
 }
-

@@ -45,7 +45,7 @@ class FacilityMapperTest {
     @BeforeEach
     void setUp() {
         validFacilityId = jdbcTemplate.queryForObject(
-                "SELECT equipment_id FROM equipment LIMIT 1", Long.class);
+                "SELECT equipment_id FROM equipment WHERE is_deleted = false LIMIT 1", Long.class);
     }
 
     // ===== findFacilities =====
@@ -77,7 +77,7 @@ class FacilityMapperTest {
     // ===== findFacilityHistory =====
 
     @Nested
-    @DisplayName("findFacilityHistory — 설비 이벤트 이력 조회")
+    @DisplayName("findFacilityHistory — 설비 정비 이력 조회")
     class FindFacilityHistory {
 
         @Test
@@ -96,7 +96,7 @@ class FacilityMapperTest {
             assumeTrue(validFacilityId != null, "설비 데이터 없음 — skip");
 
             List<FacilityHistoryDto> result = facilityMapper.findFacilityHistory(validFacilityId);
-            assumeTrue(!result.isEmpty(), "해당 설비의 이벤트 이력 없음 — skip");
+            assumeTrue(!result.isEmpty(), "해당 설비의 정비 이력 없음 — skip");
 
             FacilityHistoryDto first = result.get(0);
             assertNotNull(first.getEventId(),   "eventId 매핑 확인");

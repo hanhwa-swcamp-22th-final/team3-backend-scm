@@ -123,7 +123,7 @@ class AdminApiIntegrationTest {
                     "INSERT INTO product (product_id, product_name, product_code) VALUES (?, ?, ?)",
                     productId, "테스트 제품", "TEST-PROD");
             jdbcTemplate.update(
-                    "INSERT INTO OCSA_weight_config (config_id, industry_preset) VALUES (?, ?)",
+                    "INSERT INTO OCSA_weight_config (config_id, industry_preset_name) VALUES (?, ?)",
                     configId, "SEMICONDUCTOR");
 
             OrderCreateRequest request = new OrderCreateRequest(productId, configId, "ORD-NEW", 50, LocalDate.now().plusDays(5), true);
@@ -150,7 +150,7 @@ class AdminApiIntegrationTest {
                     "INSERT INTO product (product_id, product_name, product_code) VALUES (?, ?, ?)",
                     productId, "테스트 제품", "TEST-PROD");
             jdbcTemplate.update(
-                    "INSERT INTO OCSA_weight_config (config_id, industry_preset) VALUES (?, ?)",
+                    "INSERT INTO OCSA_weight_config (config_id, industry_preset_name) VALUES (?, ?)",
                     configId, "SEMICONDUCTOR");
 
             Long orderId = idGenerator.generate();
@@ -183,7 +183,7 @@ class AdminApiIntegrationTest {
                     "INSERT INTO product (product_id, product_name, product_code) VALUES (?, ?, ?)",
                     productId, "테스트 제품", "TEST-PROD");
             jdbcTemplate.update(
-                    "INSERT INTO OCSA_weight_config (config_id, industry_preset) VALUES (?, ?)",
+                    "INSERT INTO OCSA_weight_config (config_id, industry_preset_name) VALUES (?, ?)",
                     configId, "SEMICONDUCTOR");
 
             Long orderId = idGenerator.generate();
@@ -207,14 +207,14 @@ class AdminApiIntegrationTest {
                     "INSERT INTO product (product_id, product_name, product_code) VALUES (?, ?, ?)",
                     productId, "테스트 제품", "TEST-PROD");
             jdbcTemplate.update(
-                    "INSERT INTO OCSA_weight_config (config_id, industry_preset) VALUES (?, ?)",
+                    "INSERT INTO OCSA_weight_config (config_id, industry_preset_name) VALUES (?, ?)",
                     configId, "SEMICONDUCTOR");
 
             Long orderId = idGenerator.generate();
             // 강제로 ANALYZED 상태로 DB 삽입
             jdbcTemplate.update(
-                    "INSERT INTO orders (order_id, product_id, config_id, order_no, order_quantity, order_status, order_deadline) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO orders (order_id, product_id, config_id, order_no, order_quantity, order_status, order_deadline, process_step_count, tolerance_mm, skill_level, is_first_order, difficulty_grade) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0.1000, 1, false, 'D1')",
                     orderId, productId, configId, "ORD-ANALYZED", 1, "ANALYZED", LocalDate.now().plusDays(5).toString());
 
             // 1. 수정 시도
